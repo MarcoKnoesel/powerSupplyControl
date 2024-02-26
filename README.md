@@ -8,11 +8,13 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 - [Power-Supply Control](#power-supply-control)
 	- [Table of Contents](#table-of-contents)
 	- [Installation](#installation)
-		- [Caen HV Wrapper library](#caen-hv-wrapper-library)
-		- [Create Python environment (recommended)](#create-python-environment-recommended)
-		- [Install Python packages](#install-python-packages)
+		- [Caen HV Wrapper Library](#caen-hv-wrapper-library)
+		- [Create Python Environment (recommended)](#create-python-environment-recommended)
+		- [Install Python Packages](#install-python-packages)
 		- [Install InfluxDB Open Source](#install-influxdb-open-source)
-	- [Usage](#usage)
+	- [Setup](#setup)
+	- [Start and Stop the Program](#start-and-stop-the-program)
+	- [Access the Web Page from Outside of Your Workplace](#access-the-web-page-from-outside-of-your-workplace)
 	- [Details](#details)
 	- [License](#license)
 
@@ -22,7 +24,7 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 
 
 
-### Caen HV Wrapper library 
+### Caen HV Wrapper Library 
 Go to the directory
 
 	pages/backend/hv/CAENHVWrapper-6.3/himeHV 
@@ -41,7 +43,7 @@ Add the location of the Caen HV wrapper (see [Details](#details)) to your `LD_LI
 
 
 
-### Create Python environment (recommended)
+### Create Python Environment (recommended)
 It is recommended to use a separate Python environment for Power-Supply Control. To do so, you need to 
 
 	[shell] apt-get install python3.8-venv
@@ -66,7 +68,7 @@ Make sure to install all Python packages for Power-Supply control inside this en
 
 
 
-### Install Python packages
+### Install Python Packages
 Power-Supply Control is written for (and was tested with) Python3. As usual, you can install the required python packages using `pip3`. For instance, install streamlit with
 
 	pip3 install streamlit
@@ -82,7 +84,7 @@ See https://www.influxdata.com/products/influxdb/.
 
 
 
-## Usage
+## Setup
 In order to give Power-Supply Control access to your InfluxDB, you need to define an environment variable in your shell that contains the InfluxDB token.
 Open a `tmux` session (or `screen` or similar) and type
 
@@ -102,6 +104,9 @@ and
 
 Inside these files, you can choose an arbitrary name for your devices. (In particular, the names don't need to be identical with the host names of the devices.) Note that your choice defines the name tag of the data submitted to InfluxDB. For the data from the HV supply, an underscore followed by the channel number will be appended to the name tag.
 
+
+
+## Start and Stop the Program
 Executing
 
 	[shell] ./start.sh
@@ -110,12 +115,36 @@ will activate the Python environment (see [Create Python environment (recommende
 
 In the URL line of your favorite web browser, type
 
+	[machine_for_powerSupplyControl]:8501
+
+where `[machine_for_powerSupplyControl]` is the hostname of the PC that runs Power-Supply Control, for instance
+
 	hime02:8501
 
 If that doesn't work, the IP address or the port of the server might have changed. If so, you can find the correct IP address and port printed to your tmux session behind `Network URL`.
 
 You can stop Power-Supply Control by typing `Ctrl+C` twice. Currently, it will end with a `RuntimeError` exception, which is a consequence of using multithreading in combination with streamlit.
 Currently, I am not aware of a solution that leads to a more graceful ending of the program, so you need to ignore the message until this issue is solved.
+
+
+
+## Access the Web Page from Outside of Your Workplace
+One of the main advantages of Power-Supply Control is that you can use an arbitrary web browser on any machine to access your devices. However, if you want to open the web page while you're not at your work place, you have to get access to the local network of your workplace at first. This might be possible by opening a dynamic ssh tunnel (depending on the IT-security policy of your workplace). To do so, type
+
+	[shell] ssh -D [free_port] [user]@[serverAtWorkplace]
+
+where `[free_port]` is an unoccupied port on your PC and `[user]` is the username you use to login to the server `[serverAtWorkplace]` which is part of the local network of your workplace. Then, go to the proxy settings of your web browser and select the following:
+- Choose "Manual proxy configuration"
+- Choose "SOCKS v5"
+- Choose "Proxy DNS when using SOCKS v5"
+- For "SOCKS Host", enter `localhost`
+- As "Port", enter `[free_port]`
+
+The, in the URL line of your web browser, type
+
+	[machine_for_powerSupplyControl]:8501
+
+where `[machine_for_powerSupplyControl]` is the same as in [Start and Stop the Program](#start-and-stop-the-program), but can be different from `[serverAtWorkplace]` in general.
 
 
 

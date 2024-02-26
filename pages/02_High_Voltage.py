@@ -236,6 +236,84 @@ else:
 		# -------- System Map --------
 
 		st.divider()
+		# -------- Voltages from CSV File --------
+
+		st.divider()
+
+		st.header("Set Voltages (experimental) :zap:")
+
+		st.markdown(
+			"On the left side, you can see the voltage values you defined in the csv file \
+			`pages/backend/hv/voltages.csv`. \
+			On the right side, you will be able to send these voltages by clicking the corresponding button. \
+			Up to now, you can only apply a voltage of 1 V to channel 0 for testing purposes."
+		)
+		st.markdown(
+			"This part of the page is under construction! :construction:"
+		)
+
+		col_setVoltage_1, col_setVoltage_2 = st.columns(2)
+
+		col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
+
+		col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
+
+		for errorMessage in Voltages.readVoltagesFromCSV_errors:
+			col_setVoltage_1.error(errorMessage, icon = "❗")
+		
+		for warningMessage in Voltages.readVoltagesFromCSV_warnings:
+			col_setVoltage_1.warning(warningMessage, icon = "⚠️")
+
+		# -------- Set voltages --------
+
+		col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
+
+		def set_voltage_test(voltage: float) -> None:
+			reply = st.session_state.hv.setVoltage(0, 0, voltage)
+			if reply == "":
+				col_setVoltage_2.info("Seems to work.", icon = "ℹ️")
+			else:
+				col_setVoltage_2.error(reply, icon = "❗")
+
+		def switch_on_test() -> None:
+			reply = st.session_state.hv.switchOn(0, 0)
+			if reply == "":
+				col_setVoltage_2.info("Seems to work.", icon = "ℹ️")
+			else:
+				col_setVoltage_2.error(reply, icon = "❗")
+
+		def switch_off_test() -> None:
+			reply = st.session_state.hv.switchOff(0, 0)
+			if reply == "":
+				col_setVoltage_2.info("Seems to work.", icon = "ℹ️")
+			else:
+				col_setVoltage_2.error(reply, icon = "❗")
+
+
+		def pw_on_test() -> None:
+			reply = st.session_state.hv.pwOn(0, 0)
+			if reply == "":
+				col_setVoltage_2.info("Seems to work.", icon = "ℹ️")
+			else:
+				col_setVoltage_2.error(reply, icon = "❗")
+
+		def pw_off_test() -> None:
+			reply = st.session_state.hv.pwOff(0, 0)
+			if reply == "":
+				col_setVoltage_2.info("Seems to work.", icon = "ℹ️")
+			else:
+				col_setVoltage_2.error(reply, icon = "❗")
+
+		col_setVoltage_2.button("Set voltage of channel 0 to 0 V", on_click = set_voltage_test, args = (0.,))
+		col_setVoltage_2.button("Set voltage of channel 0 to 1 V", on_click = set_voltage_test, args = (1.,))
+		col_setVoltage_2.button("Switch channel 0 on", on_click = switch_on_test)
+		col_setVoltage_2.button("Switch channel 0 off", on_click = switch_off_test)
+		col_setVoltage_2.button("Channel 0 pwOn", on_click = pw_on_test)
+		col_setVoltage_2.button("Channel 0 pwOff", on_click = pw_off_test)
+
+		# -------- System Map --------
+
+		st.divider()
 
 		st.header("System Map :world_map:")
 
