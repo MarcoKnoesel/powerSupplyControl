@@ -82,6 +82,14 @@ def logIn() -> None:
 	if not isError("logIn", reply):
 		st.session_state.loggedIn = True
 		st.rerun()
+
+def tryReLogin() -> bool:
+	#print("tryReLogin")
+	reply = st.session_state.hv.reLogin()
+	if not isError("logIn", reply):
+		st.session_state.loggedIn = True
+		st.rerun()
+	return False
 	
 def logOut() -> None:
 	#print("logOut")
@@ -137,12 +145,13 @@ if connectionResult == 0:
 	loginInfoText = "Currently not logged in. :lock:"
 # After 1 minute, the connection breaks down. 
 # Then, all commands result in error code 5 or 4098.
-# Before logging in again, logOut() and hv.forceInitCWrapper are required.
-# Otherwise, logIn() will not work.
 if connectionResult == 1:
-	logOut()
-	st.session_state.hv.forceInitCWrapper()
-	loginInfoText = "Timeout. Please log in again."
+	st.session_state.loggedIn = False
+	# Try to log in again automatically.
+	if tryReLogin():
+		loginInfoText = "Logged in! :unlock:"
+	else:
+		loginInfoText = "Timeout. Please log in again."
 # Connection works.
 if connectionResult == 2:
 	st.session_state.loggedIn = True
