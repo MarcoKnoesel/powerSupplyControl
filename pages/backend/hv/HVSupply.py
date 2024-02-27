@@ -50,12 +50,11 @@ class HVSupply:
 			self.reconnect()
 		self.pw = None
 		reply = self.cw.receiveString(self.cw.libHVWrapper.HVSystemLogout)
-		if self.isError("logout", reply):
-			return False
-		return True
+		self.isError("logout", reply)
 	
 	def checkConnection(self) -> int:
-		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
+		#print("checkConnection")
+		reply = self.getMap()
 		# no connection; most probably due to timeout
 		if reply == "!!5" or reply == "!!4098":
 			return 1
@@ -92,6 +91,21 @@ class HVSupply:
 		return False
 	
 	# -------- Get data from the HV supply --------
+	
+	# Map the combination of slot and channel number
+	# on a global channel number running over all channels of HIME
+	def slotAndCh_to_himeCh(self, slot: int, ch: int) -> int:
+		if ch < 0 or ch >= 48 or slot < 0:
+			return -1
+		if slot < 9:
+			return slot * 48 + ch
+		if slot == 10:
+			return 432 + ch
+		if slot == 12:
+			return 480 + ch
+		if slot == 14:
+			return 528 + ch
+		return -1
 
 	def getMap(self) -> str:
 		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)

@@ -103,9 +103,6 @@ class InfluxDB:
 			time.sleep(0.1)
 		# connected
 		if self.hv.checkConnection() == 2:
-			print("---------------------------------------------")
-			print("[InfluxDB.py] Submitting HV data to InfluxDB.")
-			print("---------------------------------------------")
 			# measure voltages of all channels in all slots of the HV supply
 			for slot in list(range(0,9)) + [10, 12, 14]:
 				voltages = self.hv.measureVoltages(slot, 0, 48)
