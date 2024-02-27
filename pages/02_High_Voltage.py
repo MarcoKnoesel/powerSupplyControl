@@ -5,6 +5,8 @@ import pages.backend.hv.HVList as HVList
 import pages.backend.hv.CrateMap as CrateMap
 import pages.backend.hv.ChannelParameters as ChannelParameters
 import pages.backend.InfluxDB as InfluxDB
+import pages.backend.hv.ChannelParameters as ChannelParameters
+import pages.backend.InfluxDB as InfluxDB
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
