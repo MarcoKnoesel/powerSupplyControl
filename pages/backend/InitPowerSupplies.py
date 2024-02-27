@@ -5,6 +5,7 @@ import pages.backend.hv.HVDefinitions as HVDef
 import pages.backend.InfluxDB as InfluxDB
 import pages.backend.InfluxDBConfig as InfluxDBConfig
 from pages.backend.lv.LVList import lvSupplyList
+from pages.backend.hv.HVList import hvSupplyList
 
 # Adding an entry to sys.argv is a hack to avoid that the TCP socket for the LV control
 # and the C wrapper for the HV control are re-instanciated
@@ -25,6 +26,8 @@ def init():
 		# Start threads for writing data to InfluxDB
 		if InfluxDBConfig.writeTime >= 0:
 			for i in range(0, len(lvSupplyList)):
-				InfluxDB.threads.append(InfluxDB.InfluxDB(lvSupplyList[i]))
+				InfluxDB.lvThreads.append(InfluxDB.InfluxDB(lv = lvSupplyList[i]))
+			for i in range(0, len(hvSupplyList)):
+				InfluxDB.hvThreads.append(InfluxDB.InfluxDB(hv = hvSupplyList[i]))
 		# Remember that initialization is done now
 		sys.argv.append("POWER_SUPPLY_INIT")

@@ -35,16 +35,18 @@ unsafe_allow_html=True)
 
 # -------- Session-state variable definitions --------
 
-if "lv" not in st.session_state:
+if "lvid" not in st.session_state:
 	st.session_state.lvid = 0
-	st.session_state.lv = lvSupplyList[0]
+
+if "lv" not in st.session_state:
+	st.session_state.lv = lvSupplyList[st.session_state.lvid]
 
 if "showDetails" not in st.session_state:
 	st.session_state.showDetails = False
 
 # -------- Pause threads writing to InfluxDB --------
 
-InfluxDB.pauseThread(st.session_state.lvid)
+InfluxDB.pauseLVThread(st.session_state.lvid)
 
 # -------- Title --------
 
@@ -78,6 +80,11 @@ if showTimeoutInfo:
 		Most probably, it broke down due to the timeout of the LV supply.")
 
 detectedMac = st.session_state.lv.getMAC()
+# Right after timeout, the detectedMac is empty sometimes.
+# If so, wait a little and rerun().
+if detectedMac == "":
+	time.sleep(0.1)
+	st.rerun()
 if detectedMac != st.session_state.lv.manuallyEnteredMAC:
 	st.warning(":warning: The detected MAC (\"" + detectedMac + "\") \
 		is different from the manually entered one (\"" + st.session_state.lv.manuallyEnteredMAC + "\")! \

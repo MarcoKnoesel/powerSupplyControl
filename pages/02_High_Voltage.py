@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import pages.backend.hv.HVSupply as HVSupply
 import pages.backend.InitPowerSupplies as Init
 import pages.backend.hv.HVList as HVList
 import pages.backend.hv.CrateMap as CrateMap
+import pages.backend.hv.ChannelParameters as ChannelParameters
+import pages.backend.InfluxDB as InfluxDB
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -17,27 +18,14 @@ st.set_page_config("High-Voltage Control")
 # and a C wrapper for the HV supply.
 Init.init()
 
-# -------- Session-state and function definitions --------
+# -------- Session-state variable definitions --------
+
+if "hvid" not in st.session_state:
+	st.session_state.hvid = 0
 
 if "hv" not in st.session_state:
-	st.session_state.hv = HVList.hvSupplyList[0]
+	st.session_state.hv = HVList.hvSupplyList[st.session_state.hvid]
 
-def checkConnection() -> int:
-	#print("checkConnection")
-	reply = st.session_state.hv.getMap()
-	# no connection; most probably due to timeout
-	if reply == "!!5" or reply == "!!4098":
-		return 1
-	# device already open
-	if reply == "!!24":
-		return 2
-	# no connection 
-	if reply[0:2] == "!!":
-		return 0
-	# connection works
-	return 2
-
-# initialization for each new session
 if "password" not in st.session_state:
 	st.session_state.password = ""
 
@@ -50,8 +38,13 @@ if "layer" not in st.session_state:
 if "showTimeoutInfo" not in st.session_state:
 	st.session_state.showTimeoutInfo = False
 
+# -------- Pause threads writing to InfluxDB --------
+
+InfluxDB.pauseHVThread(st.session_state.hvid)
+
+# -------- Function definitions --------
+
 def isError(source: str, message: str) -> bool:
-	#print("isError")
 	# Timeout -> simply rerun the script, so checkConnection()
 	# can take care of that
 	if message == "!!5" or message == "!!4098":
@@ -73,7 +66,6 @@ def isError(source: str, message: str) -> bool:
 def logIn() -> None:
 	if not len(st.session_state.password): 
 		return
-	#print("logIn")
 	reply = st.session_state.hv.login(st.session_state.password)
 	st.session_state.password = ""
 	if reply == "!!4103":
@@ -83,52 +75,22 @@ def logIn() -> None:
 		st.session_state.loggedIn = True
 		st.rerun()
 
-def tryReLogin() -> bool:
-	#print("tryReLogin")
-	reply = st.session_state.hv.reLogin()
+def tryReconnect() -> bool:
+	reply = st.session_state.hv.reconnect()
 	if not isError("logIn", reply):
 		st.session_state.loggedIn = True
 		st.rerun()
 	return False
 	
 def logOut() -> None:
-	#print("logOut")
 	st.session_state.hv.logout()
 	st.session_state.loggedIn = False
 
 def getMap():
-	#print("getMap")
 	reply = st.session_state.hv.getMap()
 	if isError("getMap", reply):
 		return ""
 	return reply
-
-def channelParametersToDataframe(hv: HVSupply.HVSupply, slot: int, channelStart: int, channelStop: int = -1):
-	# get voltages and currents from the HV supply
-	voltages = hv.measureVoltages(slot, channelStart, channelStop)
-	currents = hv.measureCurrents(slot, channelStart, channelStop)
-
-	if isError("channelParametersToDataframe", str(voltages[0])):
-		return pd.DataFrame()
-	if isError("channelParametersToDataframe", str(currents[0])):
-		return pd.DataFrame()
-
-	# combine data to a single two-dimensional array
-	data = []
-	for i in range(0, len(voltages)):
-		if i < len(currents):
-			current = currents[i]
-		else:
-			current = None
-		data.append([i + channelStart, slot, voltages[i], current])
-
-	# create and return dataframe
-	df = pd.DataFrame(data)
-	df.columns = ["Channel", "Slot", "Voltage (V) ⚡", "Current (A) 🌊"]
-	df.index = df.index + channelStart
-	df.index.names = ["Channel"]
-
-	return df
 
 def layerStrToInt(layerStr: str) -> int:
 	return int(layerStr[6:])
@@ -138,7 +100,7 @@ def layerToSlotAndChannels(layer: int):
 
 # -------- Check connection --------
 
-connectionResult = checkConnection()
+connectionResult = st.session_state.hv.checkConnection()
 # No connection
 if connectionResult == 0:
 	st.session_state.loggedIn = False
@@ -148,7 +110,7 @@ if connectionResult == 0:
 if connectionResult == 1:
 	st.session_state.loggedIn = False
 	# Try to log in again automatically.
-	if tryReLogin():
+	if tryReconnect():
 		loginInfoText = "Logged in! :unlock:"
 	else:
 		loginInfoText = "Timeout. Please log in again."
@@ -220,8 +182,8 @@ else:
 		col2.subheader(st.session_state.layer + ": Top PMTs :arrow_up:")
 
 	slotAndChs = layerToSlotAndChannels(layer)
-	col1.dataframe(channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2]), hide_index = True, height = 900)
-	col2.dataframe(channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2]), hide_index = True, height = 900)
+	col1.dataframe(ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2]), hide_index = True, height = 900)
+	col2.dataframe(ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2]), hide_index = True, height = 900)
 
 	st.divider()
 
@@ -234,3 +196,7 @@ else:
 st.divider()
 
 st.markdown("**Last updated:** " + datetime.now().strftime("%H:%M:%S"))
+
+# -------- Continue threads writing to InfluxDB --------
+
+InfluxDB.runAllThreads()

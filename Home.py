@@ -68,11 +68,13 @@ if InfluxDBConfig.writeTime >= 0:
 
 	if st.session_state.changeWriteTimeBool:
 		if writeTime != None:
-			for i in range(0, len(InfluxDB.threads)):
-				InfluxDB.threads[i].writeTime = writeTime
+			for thread in InfluxDB.lvThreads:
+				thread.writeTime = writeTime
+			for thread in InfluxDB.hvThreads:
+				thread.writeTime = writeTime
 		st.session_state.changeWriteTimeBool = False
 
-	influxdb_col2.metric("Current value", str(InfluxDB.threads[0].writeTime) + " s")
+	influxdb_col2.metric("Current value", str(InfluxDB.lvThreads[0].writeTime) + " s")
 
 # -------- Links --------
 
