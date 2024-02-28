@@ -65,7 +65,7 @@ void initSystem(int force){
 
 
 
-const char* HVSystemLogin(char* passwd){
+const char* HVSystemLogin(char* user, char* passwd, char* ip){
 
 	int i = 0;
 	while( System[i].ID != -1 && i != (MAX_HVPS - 1)) i++;
@@ -77,12 +77,8 @@ const char* HVSystemLogin(char* passwd){
 		return buf;
 	}
 	
-	char arg[30], userName[30];
-	strcpy(arg, "192.168.30.153");
-	strcpy(userName, "hime");
-
 	int sysHndl = -1;
-	CAENHVRESULT ret = CAENHV_InitSystem((CAENHV_SYSTEM_TYPE_t)2, LINKTYPE_TCPIP, arg, userName, passwd, &sysHndl);
+	CAENHVRESULT ret = CAENHV_InitSystem((CAENHV_SYSTEM_TYPE_t)2, LINKTYPE_TCPIP, ip, user, passwd, &sysHndl);
 	// -- debug --
 	#ifdef HIMEDEBUG
 	printf("[C] HVSystemLogin:    i = %d    handle = %d    return = %d\n", i, sysHndl, ret);

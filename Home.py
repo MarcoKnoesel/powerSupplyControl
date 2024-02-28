@@ -2,6 +2,7 @@ import streamlit as st
 import pages.backend.InfluxDB as InfluxDB
 import pages.backend.InfluxDBConfig as InfluxDBConfig
 import pages.backend.InitPowerSupplies as Init
+import pages.backend.hv.HVList as HVList
 import os 
 
 # -------- Title of the page (displayed as tab name in the browser) --------
@@ -61,18 +62,38 @@ if InfluxDBConfig.writeTime >= 0:
 
 	influxdb_col1, influxdb_col2 = st.columns(2)
 
-	def changeWriteTime():
-		st.session_state.changeWriteTimeBool = True
 
-	writeTime = influxdb_col1.number_input("Time interval for data submission", value=None, placeholder="Time in seconds", min_value=5, on_change=changeWriteTime)
+	# -------- Number input to change the time interval of data submission to InfluxDB --------
+	if len(InfluxDB.lvThreads) > 0 or len(InfluxDB.hvThreads) > 0:
+		def changeWriteTime():
+			st.session_state.changeWriteTimeBool = True
 
-	if st.session_state.changeWriteTimeBool:
-		if writeTime != None:
-			for i in range(0, len(InfluxDB.threads)):
-				InfluxDB.threads[i].writeTime = writeTime
-		st.session_state.changeWriteTimeBool = False
+		writeTime = influxdb_col1.number_input("Time interval for data submission", value=None, placeholder="Time in seconds", min_value=5, on_change=changeWriteTime)
 
-	influxdb_col2.metric("Current value", str(InfluxDB.threads[0].writeTime) + " s")
+		if st.session_state.changeWriteTimeBool:
+			if writeTime != None:
+				for thread in InfluxDB.lvThreads:
+					thread.writeTime = writeTime
+				for thread in InfluxDB.hvThreads:
+					thread.writeTime = writeTime
+			st.session_state.changeWriteTimeBool = False
+
+	# -------- Display the time interval of data submission to InfluxDB --------
+	if len(InfluxDB.lvThreads) > 0:
+		influxdb_col2.metric("Current value", str(InfluxDB.lvThreads[0].writeTime) + " s")
+	else:
+		if len(InfluxDB.hvThreads) > 0:
+			influxdb_col2.metric("Current value", str(InfluxDB.hvThreads[0].writeTime) + " s")
+		else:
+			st.warning("No power supplies found. You can define LV and HV supplies in `pages/backend/lv/LVDefinitions.py` and `pages/backend/hv/HVDefinitions.py`, respectively.", icon = "⚠️")
+	
+	# -------- Display a warning message if HV supplies have been defined, but the connection was not set up --------
+	disconnectedHVNames = ""
+	for i in range(0,len(HVList.hvSupplyList)):
+		if HVList.hvSupplyList[i].checkConnection() == 0 :
+			disconnectedHVNames += HVList.hvSupplyList[i].name
+	if len(disconnectedHVNames) > 0:
+		st.warning("The following HV supply/supplies was/were defined, but no connection was set up: " + disconnectedHVNames + ". Did you enter the password?", icon = "⚠️")
 
 # -------- Links --------
 

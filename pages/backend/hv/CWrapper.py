@@ -74,6 +74,20 @@ class CWrapper:
 		if removeLF:
 			reply = reply.replace("\n", "")
 		return reply
+	
+		# send a command and get the reply of the HV supply
+	def login(self, function, user, pw, ip) -> str:
+		function.argtypes = [ct.c_char_p, ct.c_char_p, ct.c_char_p]
+		# c_char_p would lead to automatic conversion to python byte_string,
+		# which we don't want, so we can still apply free() on the pointer.
+		# Therefore, restype = c_void:
+		function.restype = ct.c_void_p 
+		ptr = function(user, pw, ip)
+		bytes = ct.cast(ptr, ct.c_char_p).value
+		self.free(ptr)
+		reply = bytes.decode("utf-8")
+		reply = reply.replace("\n", "")
+		return reply
 
 	# free memory of the C wrapper
 	def free(self, ptr) -> None:
