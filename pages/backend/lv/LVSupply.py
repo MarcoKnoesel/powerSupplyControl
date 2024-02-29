@@ -1,4 +1,5 @@
 from pages.backend.lv.TCPSocket import *
+import pages.backend.Messages as Messages
 
 # class representing an LV supply
 class LVSupply:
@@ -10,22 +11,17 @@ class LVSupply:
 		self.manuallyEnteredMAC = mac
 		self.minVoltage = minVoltage
 		self.maxVoltage = maxVoltage
-		self.errors = []
+		self.messages = Messages.Messages()
 		self.hostname = self.getHostname()
 		self.ip = self.getIP()
 		self.mac = self.getMAC()
 
 	# -------- Always after sending a command: Ask for errors (recommendation from TDK Lambda manual) --------
 
-	def getErrors(self):
-		tmp = self.errors
-		self.errors = []
-		return tmp
-
 	def errorQuery(self) -> None:
 		errorMessage = self.tcpSocket.receiveString("SYST:ERR?")
-		if len(errorMessage):
-			self.errors.append(errorMessage)
+		if len(errorMessage) and errorMessage != "0,\"No error\"":
+			self.messages.newError(errorMessage)
 
 	def receiveString(self, command: str) -> str:
 		try:

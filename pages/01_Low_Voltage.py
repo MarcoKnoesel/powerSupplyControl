@@ -71,19 +71,15 @@ else:
 		st.rerun()
 
 	# -------- Handle timeout --------
-
-	showTimeoutInfo = False
+		
 	try:
 		st.session_state.lv.getMAC()
 	except:
 		st.session_state.lv.reconnect()
-		showTimeoutInfo = True
-
-	# -------- Information and Warnings --------
-
-	if showTimeoutInfo:
-		st.info(":information_source: The TCP connection was re-established automatically. \
+		st.info("The TCP connection was re-established automatically. \
 			Most probably, it broke down due to the timeout of the LV supply.", icon = "ℹ️")
+
+	# -------- Warnings --------
 
 	detectedMac = st.session_state.lv.getMAC()
 	# Right after timeout, the detectedMac is empty sometimes.
@@ -101,6 +97,8 @@ else:
 		st.warning("This LV supply is in constant-current mode:\
 			It will increase its output voltage until the target current is reached!", icon = "⚠️")
 
+	# -------- Power output --------
+		
 	st.divider()
 
 	st.header("Power Output :electric_plug:")
@@ -195,14 +193,10 @@ else:
 				hide_index = True
 			)
 
-	# -------- Error messages sent by the LV supply --------
+	# -------- Print error messages sent by the LV supply --------
 
-	st.divider()
-
-	errors = st.session_state.lv.getErrors()
-	for i in range(0, len(errors)):
-		if errors[i] != "0,\"No error\"":
-			st.error(errors[i], icon = "❗")
+	if st.session_state.lv.messages.isUpdated:
+		st.session_state.lv.messages.print()
 
 	# -------- Last updated --------
 
