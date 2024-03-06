@@ -11,6 +11,7 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 		- [Caen HV Wrapper library](#caen-hv-wrapper-library)
 		- [Create Python environment (recommended)](#create-python-environment-recommended)
 		- [Install Python packages](#install-python-packages)
+		- [Install InfluxDB Open Source](#install-influxdb-open-source)
 	- [Usage](#usage)
 	- [Details](#details)
 	- [License](#license)
@@ -72,6 +73,11 @@ Power-Supply Control is written for (and was tested with) Python3. As usual, you
 
 
 
+### Install InfluxDB Open Source
+See https://www.influxdata.com/products/influxdb/.
+
+
+
 ## Usage
 In order to give Power-Supply Control access to your InfluxDB, you need to define an environment variable in your shell that contains the InfluxDB token.
 Open a `tmux` session (or `screen` or similar) and type
@@ -90,13 +96,13 @@ and
 
 	pages/backend/hv/HVDefinitions.py
 
-Inside these files, you can choose an arbitrary name for your devices. (In particular, the names don't need to be identical with the host names of the devices.)
+Inside these files, you can choose an arbitrary name for your devices. (In particular, the names don't need to be identical with the host names of the devices.) Note that your choice defines the name tag of the data submitted to InfluxDB. For the data from the HV supply, an underscore followed by the channel number will be appended to the name tag.
 
-Then, execute
+Executing
 
 	[shell] ./start.sh
 
-This script will activate the Python environment (see [Create Python environment (recommended)](#create-python-environment-recommended)) and start the program.
+will activate the Python environment (see [Create Python environment (recommended)](#create-python-environment-recommended)) and start the program.
 
 In the URL line of your favorite web browser, type
 

@@ -150,6 +150,7 @@ if st.session_state.showReadmeAndLicense:
 	try:
 		with open(path + "/README.md") as f:
 			readme = f.read()
+			f.close()
 		st.divider()
 		st.header("Readme :newspaper:")
 		st.markdown(readme)
@@ -158,6 +159,7 @@ if st.session_state.showReadmeAndLicense:
 	try:
 		with open(path + "/COPYING") as f:
 			license = f.read()
+			f.close()
 		st.divider()
 		st.header("License Text :scales:")
 		st.text(license)

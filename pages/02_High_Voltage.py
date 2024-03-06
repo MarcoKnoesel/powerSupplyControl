@@ -134,7 +134,7 @@ else:
 			return int(layerStr[6:])
 
 		layer = layerStrToInt(st.session_state.layer)
-		if st.session_state.hv.isHorizontal:
+		if st.session_state.hv.isHorizontal(layer):
 			col1.subheader(st.session_state.layer + ": Left PMTs :arrow_left:")
 			col2.subheader(st.session_state.layer + ": Right PMTs :arrow_right:")
 		else:
