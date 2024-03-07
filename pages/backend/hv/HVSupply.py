@@ -111,6 +111,18 @@ class HVSupply:
 			return [None,]
 		return reply
 	
+	def getRampSpeedUp(self, slot: int, channelStart: int, channelStop: int = -1):
+		reply = self.cw.getChParam("RUp", slot, channelStart, channelStop) 
+		if self.isError("getRampSpeedUp", reply):
+			return [None,]
+		return reply
+	
+	def getRampSpeedDown(self, slot: int, channelStart: int, channelStop: int = -1):
+		reply = self.cw.getChParam("RDWn", slot, channelStart, channelStop) 
+		if self.isError("getRampSpeedDown", reply):
+			return [None,]
+		return reply
+	
 	# -------- Channel mapping --------
 
 	# Map the combination of slot and channel number
