@@ -7,7 +7,7 @@ import os
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
-st.set_page_config("Power-Supply Control")
+st.set_page_config("Power-Supply Control", page_icon = "svg/icon.svg")
 
 # -------- Initialize Power Supplies --------
 # In each Python file that defines a new webpage, 
@@ -43,7 +43,9 @@ if "showReadmeAndLicense" not in st.session_state:
 	
 st.title("Power-Supply Control :joystick:")
 
-st.markdown(
+col1, col2 = st.columns((6,2))
+
+col1.markdown(
 '''
 Welcome to Power-Supply Control.
 
@@ -52,6 +54,8 @@ Choose LV or HV from the side menu.
 Press the `R` key to refresh the page.
 '''
 )
+
+col2.image("svg/himeLogo.svg")
 
 # -------- InfluxDB --------
 if InfluxDBConfig.writeTime >= 0:

@@ -21,4 +21,4 @@ def tunableQuantity(name: str, unit: str, minValue: float, maxValue: float, getT
 
 	voltageCol3.metric("Target :dart:", str(getTarget_func()) + " " + unit)
 
-	voltageCol4.metric(":orange[Measured] :triangular_ruler:", str(getMeasured_func()) + " " + unit)
+	voltageCol4.metric("Measured :triangular_ruler:", str(getMeasured_func()) + " " + unit)

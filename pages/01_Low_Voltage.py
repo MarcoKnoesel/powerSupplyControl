@@ -9,7 +9,7 @@ import pages.backend.InfluxDB as InfluxDB
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
-st.set_page_config("Low-Voltage Control")
+st.set_page_config("Low-Voltage Control", page_icon = "svg/icon.svg")
 
 # -------- Initialize Power Supplies --------
 # In each Python file that defines a new webpage, 
