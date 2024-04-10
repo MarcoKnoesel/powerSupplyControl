@@ -110,6 +110,12 @@ class HVSupply:
 		if self.isError("measureCurrents", reply):
 			return [None,]
 		return reply
+
+	def getTargetVoltages(self, slot: int, channelStart: int, channelStop: int = -1):
+		reply = self.cw.getChParam("V0Set", slot, channelStart, channelStop) 
+		if self.isError("getTargetVoltages", reply):
+			return [None,]
+		return reply
 	
 	def getRampSpeedUp(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("RUp", slot, channelStart, channelStop) 
@@ -140,8 +146,54 @@ class HVSupply:
 			return 528 + ch
 		return -1
 	
-	def layerToSlotAndChannels(self, layer: int):
-		return [[layer, 0, 24], [layer, 24, 48]]
+	def layerToSlotsAndChannels(self, layer: int):
+		defaultReturnVal = [[-1, -1, -1],[-1, -1, -1]]
+		if layer < 1:
+			return defaultReturnVal
+		if layer > 2:
+			return defaultReturnVal
+		if layer == 1:
+			slots = [2, 0]
+			chStart = 0
+			chStop = 24
+		if layer == 2:
+			slots = [4, 6]
+			chStart = 0
+			chStop = 24
+		return [[slots[0], chStart, chStop],[slots[1], chStart, chStop]]
 	
 	def isHorizontal(self, layer: int) -> bool:
 		return layer % 2 == 0
+	
+	def setVoltage_layer(self, layer: int, voltage: float) -> str:
+		slotsAndChannels = self.layerToSlotsAndChannels(layer)
+		return self.cw.setChParam_multiple("V0Set", slotsAndChannels, voltage, 0, 0)
+	
+	def setVoltage_channel(self, slot: int, channel: int, voltage: float) -> str:
+		return self.cw.setChParam_single("V0Set", slot, channel, voltage, 0, 0)
+	
+	def pwOn_channel(self, slot: int, channel: int) -> str:
+		return self.cw.setChParam_single("Pw", slot, channel, 0, 1, 1)
+	
+	def pwOff_channel(self, slot: int, channel: int) -> str:
+		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)	
+	
+	def pwOn_layer(self, layer: int) -> str:
+		slotsAndChannels = self.layerToSlotsAndChannels(layer)
+		return self.cw.setChParam_multiple("Pw", slotsAndChannels, 0, 1, 1)
+	
+	def pwOff_layer(self, layer: int) -> str:
+		slotsAndChannels = self.layerToSlotsAndChannels(layer)
+		return self.cw.setChParam_multiple("Pw", slotsAndChannels, 0, 0, 1)
+
+	def pwOff_crate(self) -> str:
+		reply = ""
+		for layer in [1,2]:
+			reply += self.pwOff_layer(layer)
+		return reply
+
+	def pwOn_crate(self) -> str:
+		reply = ""
+		for layer in [1,2]:
+			reply += self.pwOn_layer(layer)
+		return reply

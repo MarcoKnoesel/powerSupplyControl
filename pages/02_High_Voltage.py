@@ -5,6 +5,7 @@ import pages.backend.hv.HVList as HVList
 import pages.backend.hv.CrateMap as CrateMap
 import pages.backend.hv.ChannelParameters as ChannelParameters
 import pages.backend.InfluxDB as InfluxDB
+import pages.backend.hv.Voltages as Voltages
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -16,6 +17,21 @@ st.set_page_config("High-Voltage Control", page_icon = "svg/icon.svg")
 # in order start a new TCP socket for the LV supply
 # and a C wrapper for the HV supply.
 Init.init()
+
+# -------- Hack to remove the +/- stepper buttons in st.number_input() --------
+#
+# -> Please replace this with a nicer solution (most likely: parameter in st.number_input() ),
+# once it is implemented... 
+#
+# See GitHub issue: https://github.com/streamlit/streamlit/issues/894#issuecomment-1433112038
+
+st.markdown("""
+<style>
+    button.step-up {display: none;}
+    button.step-down {display: none;}
+    div[data-baseweb] {border-radius: 4px;}
+</style>""",
+unsafe_allow_html=True)
 
 # -------- Check if HV supplies have been defined --------
 if len(HVList.hvSupplyList) == 0:
@@ -36,11 +52,17 @@ else:
 	if "loggedIn" not in st.session_state:
 		st.session_state.loggedIn = False
 
-	if "layer" not in st.session_state:
-		st.session_state.layer = "Layer 0"
+	if "layerStr" not in st.session_state:
+		st.session_state.layerStr = "Layer 0"
 
 	if "showTimeoutInfo" not in st.session_state:
 		st.session_state.showTimeoutInfo = False
+
+	if "layer_voltage" not in st.session_state:
+		st.session_state.layer_voltage = False
+
+	if "targetVoltage" not in st.session_state:
+		st.session_state.targetVoltage = -1
 
 	# -------- Pause threads writing to InfluxDB --------
 
@@ -76,7 +98,10 @@ else:
 
 	st.header(st.session_state.hv.name)
 
-	selected_hv_name = st.selectbox("Choose an HV supply", HVList.hvSupplyNameList)
+	top_col_1, top_col_2 = st.columns((6,2))
+	top_col_2.image("svg/himeLogo.svg")
+
+	selected_hv_name = top_col_1.selectbox("Choose an HV supply", HVList.hvSupplyNameList)
 
 	# check if the selected HV is different from the current one 
 	if selected_hv_name != st.session_state.hv.name:
@@ -84,7 +109,7 @@ else:
 		st.rerun()
 
 	# -------- Show whether you are logged in or not --------
-	login_col_1, login_col_2 = st.columns((3,7))
+	login_col_1, login_col_2 = top_col_1.columns(2)
 	login_col_2.info(loginInfoText, icon = "ℹ️")
 
 	# -------- Logged out --------
@@ -112,14 +137,21 @@ else:
 				st.session_state.loggedIn = False
 
 		login_col_1.button("Logout", on_click = logOut)
+
+		st.header("Switch the Complete HV Supply On/Off")
+		switch_on_col, switch_off_col = st.columns(2)
+		switch_on_col.button("Switch on all channels :rocket:", on_click = st.session_state.hv.pwOn_crate)
+		switch_off_col.button("Switch off all channels :zzz:", on_click = st.session_state.hv.pwOff_crate)
 		
 		st.divider()
 
-		# -------- Measured Voltages and Currents --------
+		# -------- Layers --------
 
-		st.header("Measured Voltages and Currents :triangular_ruler:")
+		st.header("Set Voltage by Layer")
 
-		st.selectbox("Choose a layer :roll_of_paper:", key="layer", 
+		layer_col1, layer_col2 = st.columns(2)
+
+		layer_col1.selectbox("Choose a layer :roll_of_paper:", key="layerStr", 
 			options = (
 				"Layer 0", 
 				"Layer 1", 
@@ -128,22 +160,80 @@ else:
 			)
 		)
 
+		currentLayer = int(st.session_state.layerStr[6:])
+
+		layer_col1.button("Switch layer on :rocket:", on_click = st.session_state.hv.pwOn_layer, args = (currentLayer,))
+		layer_col1.button("Switch layer off :zzz:", on_click = st.session_state.hv.pwOff_layer, args = (currentLayer,))
+
+		def changeLayerVoltage() -> None:
+			if st.session_state.layer_voltage != None:
+				st.session_state.hv.setVoltage_layer(currentLayer, st.session_state.layer_voltage)
+				st.session_state.layer_voltage = None
+
+		st.session_state.layer_voltage = layer_col2.number_input("Set target voltage for this layer (V) :level_slider:", value = None, placeholder = "Voltage (V)", min_value=0, max_value = 1550)
+		if st.session_state.layer_voltage == None:
+			layer_col2.metric("Target :dart:", "--")
+		else:
+			layer_col2.metric("Target :dart:", str(st.session_state.layer_voltage) + " V")
+
+		layer_col2.button("Send target voltage to layer " + str(currentLayer) + " :satellite_antenna:", on_click=changeLayerVoltage, disabled=(st.session_state.layer_voltage == None))
+
+		st.markdown("... and don't forget to press the `R` key to see the effect of your changes! :eyes:")
+
 		col1, col2 = st.columns(2)
 
-		def layerStrToInt(layerStr: str) -> int:
-			return int(layerStr[6:])
-
-		layer = layerStrToInt(st.session_state.layer)
-		if st.session_state.hv.isHorizontal(layer):
-			col1.subheader(st.session_state.layer + ": Left PMTs :arrow_left:")
-			col2.subheader(st.session_state.layer + ": Right PMTs :arrow_right:")
+		if st.session_state.hv.isHorizontal(currentLayer):
+			col1.subheader(st.session_state.layerStr + ": Left PMTs :arrow_left:")
+			col2.subheader(st.session_state.layerStr + ": Right PMTs :arrow_right:")
 		else:
-			col1.subheader(st.session_state.layer + ": Bottom PMTs :arrow_down:")
-			col2.subheader(st.session_state.layer + ": Top PMTs :arrow_up:")
+			col1.subheader(st.session_state.layerStr + ": Top PMTs :arrow_up:")
+			col2.subheader(st.session_state.layerStr + ": Bottom PMTs :arrow_down:")
 
-		slotAndChs = st.session_state.hv.layerToSlotAndChannels(layer)
-		col1.dataframe(ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2]), hide_index = True, height = 900)
-		col2.dataframe(ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2]), hide_index = True, height = 900)
+		slotAndChs = st.session_state.hv.layerToSlotsAndChannels(currentLayer)
+		df1 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2])
+		df2 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2])
+		col1.dataframe(df1, hide_index = True, height = round(5.5 * (df1.size + 1)) )
+		col2.dataframe(df2, hide_index = True, height = round(5.5 * (df2.size + 1)) )
+
+		st.markdown("Tip: Use `Shift + Mouse Wheel` to scroll left/right or choose \"Wide mode\" in the settings.")
+		
+		st.divider()
+
+		# -------- Full Detector --------
+
+		st.header("Set Voltages from CSV file")
+
+		st.markdown(
+			"On the left side, you can see the voltage values you defined in the csv file \
+			`pages/backend/hv/voltages.csv`. \
+			On the right side, you can send these voltages by clicking the corresponding button."
+		)
+
+		col_setVoltage_1, col_setVoltage_2 = st.columns(2)
+
+		col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
+
+		col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
+
+		for errorMessage in Voltages.readVoltagesFromCSV_errors:
+			col_setVoltage_1.error(errorMessage, icon = "❗")
+		
+		for warningMessage in Voltages.readVoltagesFromCSV_warnings:
+			col_setVoltage_1.warning(warningMessage, icon = "⚠️")
+
+		col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
+
+		def setVoltagesFromCSV() -> None:
+			voltagesFromCSV = Voltages.readVoltagesFromCSV()
+			for i in range(0, len(voltagesFromCSV)):
+					voltage = voltagesFromCSV[i][2]
+					if voltage != None:
+						st.session_state.hv.setVoltage_channel(voltagesFromCSV[i][0], voltagesFromCSV[i][1], voltage)
+
+
+		col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
+
+		# -------- System Map --------
 
 		st.divider()
 

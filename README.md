@@ -71,6 +71,10 @@ Power-Supply Control is written for (and was tested with) Python3. As usual, you
 
 	pip3 install streamlit
 
+and the InfluxDB client with 
+
+	pip install influxdb-client
+
 
 
 ### Install InfluxDB Open Source

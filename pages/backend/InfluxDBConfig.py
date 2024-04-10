@@ -9,6 +9,6 @@ bucket = "HIME"
 
 # The default time interval in which data is submitted to InfluxDB,
 # given in seconds.
-# Enter a number >= 5 or a negative number to disable data submission completely.
+# Enter a negative number to disable data submission completely.
 # Non-negative numbers smaller than 5 will be set to 5 automatically.
-writeTime = 300
+writeTime = -1

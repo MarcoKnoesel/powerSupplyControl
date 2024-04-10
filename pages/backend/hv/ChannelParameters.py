@@ -3,8 +3,14 @@ import pandas as pd
 
 def channelParametersToDataframe(hv: HVSupply, slot: int, channelStart: int, channelStop: int = -1):
 
+	if slot == -1:
+		df = pd.DataFrame(["----",])
+		df.columns = ["Not available."]
+		return df
+
 	# get voltages and currents from the HV supply
 	voltages = hv.measureVoltages(slot, channelStart, channelStop)
+	targetVoltages = hv.getTargetVoltages(slot, channelStart, channelStop)
 	currents = hv.measureCurrents(slot, channelStart, channelStop)
 	rampUp = hv.getRampSpeedUp(slot, channelStart, channelStop)
 	rampDown = hv.getRampSpeedDown(slot, channelStart, channelStop)
@@ -12,6 +18,10 @@ def channelParametersToDataframe(hv: HVSupply, slot: int, channelStart: int, cha
 	# combine data to a signle two-dimensional array
 	data = []
 	for i in range(0, len(voltages)):
+		if i < len(targetVoltages):
+			tgtVolt = targetVoltages[i]
+		else:
+			tgtVolt = None
 		if i < len(currents):
 			current = currents[i]
 		else:
@@ -24,11 +34,11 @@ def channelParametersToDataframe(hv: HVSupply, slot: int, channelStart: int, cha
 			rDown = rampDown[i]
 		else:
 			rDown = None
-		data.append([slot, i + channelStart, voltages[i], current, rUp, rDown])
+		data.append([slot, i + channelStart, voltages[i], tgtVolt, current, rUp, rDown])
 
 	# create and return dataframe
 	df = pd.DataFrame(data)
-	df.columns = ["Slot", "Channel", "Voltage (V) ⚡", "Current (A) 🌊", "Ramp up", "Ramp down"]
+	df.columns = ["Slot", "Channel", "Voltage (V) ⚡", "Target (V) 🎯", "Current (A) 🌊", "Ramp up (V/s) 🛫", "Ramp down (V/s) 🛬"]
 	df.index = df.index + channelStart
 	df.index.names = ["Channel"]
 

@@ -54,7 +54,7 @@ echo "Copying files..."
 cp -vf ./include/CAENHVWrapper.h $DEST_INCLUDE_DIR/CAENHVWrapper.h || { echo $ERROR ; exit 1; }
 chmod +r $DEST_INCLUDE_DIR/CAENHVWrapper.h || { echo $ERROR ; exit 1; }
 
-cp -vf ./doc/CAENHVWrapper.pdf $DEST_DIR/ || { echo $ERROR ; exit 1; }
+#cp -vf ./doc/CAENHVWrapper.pdf $DEST_DIR/ || { echo $ERROR ; exit 1; }
 cp -vf ./CAENHVWrapperReadme.txt $DEST_DIR/ || { echo $ERROR ; exit 1; }
 cp -vf ./CAENHVWrapperReleaseNotes.txt $DEST_DIR/ || { echo $ERROR ; exit 1; }
 cp -vf ./CAEN_License_Agreement.txt $DEST_DIR/ || { echo $ERROR ; exit 1; }

@@ -232,11 +232,17 @@ void freeLists(unsigned long type, float fParValList[], unsigned long lParValLis
 
 
 
-const char* throwError(int ret, int handle, unsigned long type, float fParValList[], unsigned long lParValList[]){
+const char* throwError(int ret){
 	char reply[100];
 	sprintf(reply, "!!%d", ret);
-	freeLists(type, fParValList, lParValList);
 	return strdup(reply);
+}
+
+
+
+const char* freeListsAndThrowError(int ret, unsigned long type, float fParValList[], unsigned long lParValList[]){
+	freeLists(type, fParValList, lParValList);
+	return throwError(ret);
 }
 
 
@@ -268,6 +274,16 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 		ChList[ch - chStart] = ch;
 	}
 
+	// Get fParValList or lParValList
+	float			*fParValList = NULL;
+	unsigned long	type, *lParValList = NULL;
+
+	CAENHVRESULT ret = CAENHV_GetChParamProp(handle, Slot, ChList[0], ParName, "Type", &type);
+	if( ret != CAENHV_OK ){
+		if(ChList != NULL) free(ChList);
+		return freeListsAndThrowError(ret, type, fParValList, lParValList);
+	}
+
 	/*
 		TODO:
 
@@ -278,19 +294,9 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 		and you have to make sure to use fParValList in the former case
 		and lParValList in the latter.
 	*/
-
-
-	// Get fParValList or lParValList
-	float			*fParValList = NULL;
-	unsigned long	type, *lParValList = NULL;
-
-	CAENHVRESULT ret = CAENHV_GetChParamProp(handle, Slot, ChList[0], ParName, "Type", &type);
-	if( ret != CAENHV_OK ){
-		if(ChList != NULL) free(ChList);
-		return throwError(ret, handle, type, fParValList, lParValList);
-	}
-	//if( type == PARAM_TYPE_NUMERIC ){
-	if( 1 ){
+	type = PARAM_TYPE_NUMERIC;
+	
+	if( type == PARAM_TYPE_NUMERIC ){
 		fParValList = malloc(ChNum*sizeof(float));
 		ret = CAENHV_GetChParam(handle, Slot, ParName, ChNum, ChList, fParValList);
 	}
@@ -310,7 +316,7 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 	// Use the above lists to get channel parameters
 	if( ret != CAENHV_OK ){
 		if(ChList != NULL) free(ChList);
-		return throwError(ret, handle, type, fParValList, lParValList);
+		return freeListsAndThrowError(ret, type, fParValList, lParValList);
 	}
 	
 	for(int iCh = 0; iCh < chStop - chStart; iCh++){
@@ -330,6 +336,61 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 
 	if(ChList != NULL) free(ChList);
 	freeLists(type, fParValList, lParValList);
+	char* buf = strdup(reply);
+	return buf;
+}
+
+
+
+const char* HVSetChParam(unsigned short Slot, unsigned short chStart, unsigned short chStop, char* ParName, float value_float, int value_int, unsigned long type_par){
+
+	char reply[20] = "";
+
+	if( noHVPS() ){
+		strcpy(reply, "!!noHVPS");
+		char* buf = strdup(reply);
+		return buf;
+	}
+
+	int i;
+	int handle = -1;
+	if( ( i = OneHVPS() ) >= 0 )
+		handle = System[i].Handle;
+
+	unsigned short ChNum = chStop - chStart;
+
+	unsigned short* ChList = malloc(ChNum * sizeof(unsigned short));
+
+	for(int i = 0; i < ChNum; i++ ){
+		ChList[i] = (unsigned short)i + chStart;
+	}	 
+
+	unsigned long type;
+
+	CAENHVRESULT ret = CAENHV_GetChParamProp(handle, Slot, ChList[0], ParName, "Type", &type);
+	
+	if( ret != CAENHV_OK ){
+		if(ChList != NULL) free(ChList);
+		return throwError(ret);
+	}
+	
+	/*
+		See TODO in HVGetChParam
+	*/
+	//if( type == PARAM_TYPE_NUMERIC ){
+	if( type_par == 0){
+		ret = CAENHV_SetChParam(handle, Slot, ParName, ChNum, ChList, &value_float);
+	}
+	else{
+		ret = CAENHV_SetChParam(handle, Slot, ParName, ChNum, ChList, &value_int);
+	}
+
+	if(ChList != NULL) free(ChList);
+
+	if( ret != CAENHV_OK ){
+		return throwError(ret);
+	}
+
 	char* buf = strdup(reply);
 	return buf;
 }
