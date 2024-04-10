@@ -6,7 +6,7 @@ CC = gcc
 
 FLAGS = -DUNIX -DLINUX -fPIC -shared
 
-LIBS = -lcaenhvwrapper -lncurses -lpthread -ldl -lm
+LIBS = -L../bin/x86_64 -lcaenhvwrapper -lncurses -lpthread -ldl -lm
 
 INCLUDEDIR = -I./$(GLOBALDIR) -I./include/
 
@@ -20,12 +20,12 @@ CFLAGS = $(FLAGS)
 
 all: $(PROGRAM)
 
-$(PROGRAM):	$(OBJECTS)
+$(PROGRAM):	$(OBJECTS) 
 	$(CC) $(CFLAGS) -o $(PROGRAM) $(OBJECTS) $(LIBS)
 
 $(OBJECTS): $(SOURCES)
 
-$(GLOBALDIR)%.o: $(GLOBALDIR)%.c
+$(GLOBALDIR)%.o: $(GLOBALDIR)%.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(INCLUDEDIR) -o $@ -c $<
 
 clean:

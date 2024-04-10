@@ -38,7 +38,7 @@ def channelParametersToDataframe(hv: HVSupply, slot: int, channelStart: int, cha
 
 	# create and return dataframe
 	df = pd.DataFrame(data)
-	df.columns = ["Slot", "Channel", "Voltage (V) ⚡", "Target (V) 🎯", "Current (A) 🌊", "Ramp up (V/s) 🛫", "Ramp down (V/s) 🛬"]
+	df.columns = ["Slot", "Channel", "Voltage (V) ⚡", "Target (V) 🎯", "Current (\u03BCA) 🌊", "Ramp up (V/s) 🛫", "Ramp down (V/s) 🛬"]
 	df.index = df.index + channelStart
 	df.index.names = ["Channel"]
 

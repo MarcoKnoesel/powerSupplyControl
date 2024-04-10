@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "MainWrapp.h"
-#include "CAENHVWrapper.h"
+#include "../include/CAENHVWrapper.h"
 #include "console.h"
 
 #define   BS                 8

@@ -54,7 +54,7 @@ class HVSupply:
 	
 	def checkConnection(self) -> int:
 		#print("checkConnection")
-		reply = self.getMap()
+		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
 		# no connection; most probably due to timeout
 		if reply == "!!5" or reply == "!!4098":
 			return 1

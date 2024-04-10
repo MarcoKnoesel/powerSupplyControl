@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "HVWrapper.h"
-#include "CAENHVWrapper.h"
+#include "../include/CAENHVWrapper.h"
 
 //#define HIMEDEBUG
 
@@ -164,9 +164,6 @@ const char* HVGetCrateMap(){
 	if( ( i = OneHVPS() ) >= 0 )
 		handle = System[i].Handle;
 
-	char iChar[100] = "";
-	sprintf(iChar, "[C] HVPS is i = %d\n", i);
-	
 	char reply[10000] = "";
 
 	ret = CAENHV_GetCrateMap(handle, &NrOfSl, &NrOfCh, &ModelList, &DescriptionList, &SerNumList, &FmwRelMinList, &FmwRelMaxList );
@@ -320,10 +317,10 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 	}
 	
 	for(int iCh = 0; iCh < chStop - chStart; iCh++){
-		char tmp[16];
+		char tmp[16] = "";
 		//if( type == PARAM_TYPE_NUMERIC ){
 		if( 1 ){
-			sprintf(tmp, "%10.2f", fParValList[iCh]);
+			sprintf(tmp, "%f", fParValList[iCh]);
 		}
 		else{
 			sprintf(tmp, "%ld", lParValList[iCh]);

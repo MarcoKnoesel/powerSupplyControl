@@ -23,7 +23,7 @@ FLAGS=		-DUNIX -DLINUX
 
 LFLAGS=
 
-LIBS=		-lcaenhvwrapper -lncurses -lpthread -ldl -lm
+LIBS=		-L../bin/x86_64 -lcaenhvwrapper -lncurses -lpthread -ldl -lm
 
 
 INCLUDEDIR=	-I./$(GLOBALDIR) -I./include/

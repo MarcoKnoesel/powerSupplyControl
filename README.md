@@ -13,6 +13,8 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 		- [Install Python Packages](#install-python-packages)
 		- [Install InfluxDB Open Source](#install-influxdb-open-source)
 	- [Setup](#setup)
+		- [InfluxDB](#influxdb)
+		- [Adding or Removing LV and HV Supplies](#adding-or-removing-lv-and-hv-supplies)
 	- [Start and Stop the Program](#start-and-stop-the-program)
 	- [Access the Web Page from Outside of Your Workplace](#access-the-web-page-from-outside-of-your-workplace)
 	- [Details](#details)
@@ -25,7 +27,11 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 
 
 ### Caen HV Wrapper Library 
-Go to the directory
+Add the location of the Caen HV wrapper library (see [Details](#details)) to your `LD_LIBRARY_PATH`. I.e., for instance in your `~/.bashrc`, `~/.zshrc` or similar, add the line
+
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:[absolute_path_to]/powerSupplyControl/pages/backend/hv/CAENHVWrapper-6.3/bin/x86_64
+
+Then, go to the directory
 
 	pages/backend/hv/CAENHVWrapper-6.3/himeHV 
 
@@ -36,10 +42,6 @@ and type
 inside. This will create the shared library
 
 	pages/backend/hv/CAENHVWrapper-6.3/himeHV/libHVWrapper.so
-
-Add the location of the Caen HV wrapper (see [Details](#details)) to your `LD_LIBRARY_PATH`. I.e., for instance in your `~/.bashrc`, `~/.zshrc` or similar, add the line
-
-	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:[absolute_path_to]/powerSupplyControl/pages/backend/hv/CAENHVWrapper-6.3/bin/x86_64
 
 
 
@@ -85,6 +87,10 @@ See https://www.influxdata.com/products/influxdb/.
 
 
 ## Setup
+
+
+
+### InfluxDB
 In order to give Power-Supply Control access to your InfluxDB, you need to define an environment variable in your shell that contains the InfluxDB token.
 Open a `tmux` session (or `screen` or similar) and type
 
@@ -94,6 +100,11 @@ The URL of the InfluxDB server as well as the organization and the bucket you wa
 
 	pages/backend/InfluxDBConfig.py
 
+Besides, you can choose a time interval for the automatic data submission to InfluxDB. You can set a negative value to disable the data submission completely.
+
+
+
+### Adding or Removing LV and HV Supplies
 If you want to add or remove LV HV supplies from Power-Supply Control, or change their IP addresses, you can do so in the files
 
 	pages/backend/lv/LVDefinitions.py
