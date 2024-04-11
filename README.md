@@ -9,7 +9,7 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 	- [Table of Contents](#table-of-contents)
 	- [Installation](#installation)
 		- [Caen HV Wrapper Library](#caen-hv-wrapper-library)
-		- [Create Python Environment (recommended)](#create-python-environment-recommended)
+		- [Create Python Environment](#create-python-environment)
 		- [Install Python Packages](#install-python-packages)
 		- [Install InfluxDB Open Source](#install-influxdb-open-source)
 	- [Setup](#setup)
@@ -45,7 +45,7 @@ inside. This will create the shared library
 
 
 
-### Create Python Environment (recommended)
+### Create Python Environment
 It is recommended to use a separate Python environment for Power-Supply Control. To do so, you need to 
 
 	[shell] apt-get install python3.8-venv
@@ -68,6 +68,8 @@ Make sure to install all Python packages for Power-Supply control inside this en
 	[shell] which python
 	[shell] which pip
 
+There is a shell script in the main directory of Power-Supply Control called `start.sh`. Open this file with any text editor and provide the path to the python environment you created.
+
 
 
 ### Install Python Packages
@@ -83,6 +85,8 @@ and the InfluxDB client with
 
 ### Install InfluxDB Open Source
 See https://www.influxdata.com/products/influxdb/.
+
+If you don't want to use InfluxDB, you can skip this step. However, you need to disable the data submission then, as described in section [InfluxDB](#influxdb). 
 
 
 
@@ -115,6 +119,8 @@ and
 
 Inside these files, you can choose an arbitrary name for your devices. (In particular, the names don't need to be identical with the host names of the devices.) Note that your choice defines the name tag of the data submitted to InfluxDB. For the data from the HV supply, an underscore followed by the channel number will be appended to the name tag.
 
+The order of the power supplies in the dropdown menues of the LV and HV webpages will be the same as in `LVDefinitions.py` and `HVDefinitions.py`, respectively.
+
 
 
 ## Start and Stop the Program
@@ -122,7 +128,13 @@ Executing
 
 	[shell] ./start.sh
 
-will activate the Python environment (see [Create Python environment (recommended)](#create-python-environment-recommended)) and start the program.
+will activate the Python environment (see [Create Python environment](#create-python-environment)) and start the program. If this command results in an error message like
+
+	bash: ./test.sh: Permission denied
+
+or similar, you probably need to provide execution rights to the script by typing
+
+	[shell] chmod u+x start.sh
 
 In the URL line of your favorite web browser, type
 

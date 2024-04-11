@@ -61,8 +61,9 @@ else:
 	# -------- Device selection --------
 
 	st.header(st.session_state.lv.name)
-	col_lvSelection_1, col_lvSelection_2 = st.columns((2,5))
+	col_lvSelection_1, col_lvSelection_2, col_lvSelection_3 = st.columns((2,4,2))
 	selected_lv_name = col_lvSelection_1.selectbox("Choose an LV supply", LVList.lvSupplyNameList)
+	col_lvSelection_3.image("svg/himeLogo.svg")
 
 	# check if the selected LV is different from the current one 
 	if selected_lv_name != st.session_state.lv.name:
