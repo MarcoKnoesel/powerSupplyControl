@@ -120,11 +120,11 @@ linkDescriptions = [
 links = [
 	"https://www.caen.it/products/caen-hv-wrapper-library/",
 	"https://www.caen.it/products/sy4527/",
-	"http://hime02:8091",
-	"http://hime02:1234",
+	"http://hime01:8091",
+	"http://hime01:1234",
 	"https://neptun.ikp.physik.tu-darmstadt.de/elog/HIME/",
 	"https://lwapsr.ikp.physik.tu-darmstadt.de/cgi-bin/login.pl",
-	"http://hime02:8086/",
+	"http://hime01:8086/",
 	"https://docs.influxdata.com/influxdb/v2/",
 	"https://product.tdk.com/system/files/dam/doc/product/power/switching-power/prg-power/instruction_manual/genesystm-lan-interface-manual-1u.pdf"
 ]
