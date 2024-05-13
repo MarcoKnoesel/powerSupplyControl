@@ -50,6 +50,9 @@ else:
 	if "showDetails" not in st.session_state:
 		st.session_state.showDetails = False
 
+	if "showReconnectInfo" not in st.session_state:
+		st.session_state.showReconnectInfo = False
+
 	# -------- Pause threads writing to InfluxDB --------
 
 	InfluxDB.pauseLVThread(st.session_state.lvid)
@@ -72,13 +75,18 @@ else:
 		st.rerun()
 
 	# -------- Handle timeout --------
-		
 	try:
 		st.session_state.lv.getMAC()
 	except:
 		st.session_state.lv.reconnect()
+		time.sleep(0.2)
+		st.session_state.showReconnectInfo = True
+		st.rerun()
+
+	if st.session_state.showReconnectInfo:
 		st.info("The TCP connection was re-established automatically. \
 			Most probably, it broke down due to the timeout of the LV supply.", icon = "ℹ️")
+		st.session_state.showReconnectInfo = False
 
 	# -------- Warnings --------
 
