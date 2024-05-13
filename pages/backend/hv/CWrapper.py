@@ -29,14 +29,15 @@ class CWrapper:
 			pos0 = positions[i] + 1
 			pos1 = positions[i+1]
 			if pos1 - pos0 < 1:
-				data.append(None)
+				entry = None
 			else:
 				try:
-					data.append(float(csvstr[pos0:pos1]))
+					entry = float(csvstr[pos0:pos1])
 				# A value error will be raised when HVWrapper.c sends an error message,
 				# for instance due to timeout.
 				except ValueError:
-					data.append(csvstr[pos0:pos1])
+					entry = csvstr[pos0:pos1]
+			data.append(entry)
 
 		return data
 

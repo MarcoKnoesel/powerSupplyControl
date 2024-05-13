@@ -50,6 +50,9 @@ else:
 	if "showDetails" not in st.session_state:
 		st.session_state.showDetails = False
 
+	if "showReconnectInfo" not in st.session_state:
+		st.session_state.showReconnectInfo = False
+
 	# -------- Pause threads writing to InfluxDB --------
 
 	InfluxDB.pauseLVThread(st.session_state.lvid)
@@ -61,8 +64,9 @@ else:
 	# -------- Device selection --------
 
 	st.header(st.session_state.lv.name)
-	col_lvSelection_1, col_lvSelection_2 = st.columns((2,5))
+	col_lvSelection_1, col_lvSelection_2, col_lvSelection_3 = st.columns((2,4,2))
 	selected_lv_name = col_lvSelection_1.selectbox("Choose an LV supply", LVList.lvSupplyNameList)
+	col_lvSelection_3.image("svg/himeLogo.svg")
 
 	# check if the selected LV is different from the current one 
 	if selected_lv_name != st.session_state.lv.name:
@@ -71,13 +75,18 @@ else:
 		st.rerun()
 
 	# -------- Handle timeout --------
-		
 	try:
 		st.session_state.lv.getMAC()
 	except:
 		st.session_state.lv.reconnect()
+		time.sleep(0.2)
+		st.session_state.showReconnectInfo = True
+		st.rerun()
+
+	if st.session_state.showReconnectInfo:
 		st.info("The TCP connection was re-established automatically. \
 			Most probably, it broke down due to the timeout of the LV supply.", icon = "ℹ️")
+		st.session_state.showReconnectInfo = False
 
 	# -------- Warnings --------
 

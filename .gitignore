@@ -3,3 +3,4 @@
 *.so*
 __pycache__
 !pages/backend/hv/CAENHVWrapper-6.3/bin/**
+pages/backend/hv/CAENHVWrapper-6.3/HVWrapperDemo/HVWrappdemo

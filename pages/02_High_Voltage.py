@@ -138,6 +138,7 @@ else:
 
 		login_col_1.button("Logout", on_click = logOut)
 
+
 		st.header("Switch the Complete HV Supply On/Off")
 		switch_on_col, switch_off_col = st.columns(2)
 		switch_on_col.button("Switch on all channels :rocket:", on_click = st.session_state.hv.pwOn_crate)
@@ -178,24 +179,25 @@ else:
 
 		layer_col2.button("Send target voltage to layer " + str(currentLayer) + " :satellite_antenna:", on_click=changeLayerVoltage, disabled=(st.session_state.layer_voltage == None))
 
-		st.markdown("... and don't forget to press the `R` key to see the effect of your changes! :eyes:")
+		st.subheader("Channel Parameters")
+
+		st.markdown("Tip: Use `Shift + Mouse Wheel` to scroll left/right or choose \"Wide mode\" in the settings.")	  
+		st.markdown("...and don't forget to press the `R` key to see the effect of your voltage settings! :eyes:")
 
 		col1, col2 = st.columns(2)
 
 		if st.session_state.hv.isHorizontal(currentLayer):
-			col1.subheader(st.session_state.layerStr + ": Left PMTs :arrow_left:")
-			col2.subheader(st.session_state.layerStr + ": Right PMTs :arrow_right:")
+			col1.markdown("**" + st.session_state.layerStr + ": Left PMTs** :arrow_left:")
+			col2.markdown("**" + st.session_state.layerStr + ": Right PMTs** :arrow_right:")
 		else:
-			col1.subheader(st.session_state.layerStr + ": Top PMTs :arrow_up:")
-			col2.subheader(st.session_state.layerStr + ": Bottom PMTs :arrow_down:")
+			col1.markdown("**" + st.session_state.layerStr + ": Top PMTs** :arrow_up:")
+			col2.markdown("**" + st.session_state.layerStr + ": Bottom PMTs** :arrow_down:")
 
 		slotAndChs = st.session_state.hv.layerToSlotsAndChannels(currentLayer)
 		df1 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2])
 		df2 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2])
 		col1.dataframe(df1, hide_index = True, height = round(5.5 * (df1.size + 1)) )
 		col2.dataframe(df2, hide_index = True, height = round(5.5 * (df2.size + 1)) )
-
-		st.markdown("Tip: Use `Shift + Mouse Wheel` to scroll left/right or choose \"Wide mode\" in the settings.")
 		
 		st.divider()
 
