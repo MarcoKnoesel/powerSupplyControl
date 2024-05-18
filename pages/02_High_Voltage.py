@@ -95,7 +95,8 @@ else:
 		loginInfoText = "Logged in! :unlock:"
 
 	# -------- Device selection --------
-
+#TODO need to login at first to all crates. Otherwise it's possible that some of the HV channels for a
+# specific HIME layer cannot be reached
 	st.header(st.session_state.hv.name)
 
 	top_col_1, top_col_2 = st.columns((6,2))
@@ -192,7 +193,7 @@ else:
 		else:
 			col1.markdown("**" + st.session_state.layerStr + ": Top PMTs** :arrow_up:")
 			col2.markdown("**" + st.session_state.layerStr + ": Bottom PMTs** :arrow_down:")
-
+#TODO add support for multiple HV crates
 		slotAndChs = st.session_state.hv.layerToSlotsAndChannels(currentLayer)
 		df1 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2])
 		df2 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2])
@@ -211,29 +212,31 @@ else:
 			On the right side, you can send these voltages by clicking the corresponding button."
 		)
 
-		col_setVoltage_1, col_setVoltage_2 = st.columns(2)
+		#col_setVoltage_1, col_setVoltage_2 = st.columns(2)
 
-		col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
+		#col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
 
-		col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
+		#col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
 
-		for errorMessage in Voltages.readVoltagesFromCSV_errors:
-			col_setVoltage_1.error(errorMessage, icon = "❗")
+		#for errorMessage in Voltages.readVoltagesFromCSV_errors:
+		#	col_setVoltage_1.error(errorMessage, icon = "❗")
 		
-		for warningMessage in Voltages.readVoltagesFromCSV_warnings:
-			col_setVoltage_1.warning(warningMessage, icon = "⚠️")
+		#for warningMessage in Voltages.readVoltagesFromCSV_warnings:
+		#	col_setVoltage_1.warning(warningMessage, icon = "⚠️")
 
-		col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
+		#col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
 
-		def setVoltagesFromCSV() -> None:
-			voltagesFromCSV = Voltages.readVoltagesFromCSV()
-			for i in range(0, len(voltagesFromCSV)):
-					voltage = voltagesFromCSV[i][2]
-					if voltage != None:
-						st.session_state.hv.setVoltage_channel(voltagesFromCSV[i][0], voltagesFromCSV[i][1], voltage)
+		#def setVoltagesFromCSV() -> None:
+		#	voltagesFromCSV = Voltages.readVoltagesFromCSV()
+		#	for i in range(0, len(voltagesFromCSV)):
+		#			voltage = voltagesFromCSV[i][1]
+		#			if voltage != None:
+		#				st.session_state.hv.setVoltage_channel(2 * voltagesFromCSV[i][0], voltage)
+		#				st.session_state.hv.setVoltage_channel(2 * voltagesFromCSV[i][0]+1, voltage)
 
+#TODO set voltages for individual channels and show mapping from crate,slot,hvChannel to fpga,dacChain,padiwaChannel
 
-		col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
+		#col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
 
 		# -------- System Map --------
 

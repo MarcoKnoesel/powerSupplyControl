@@ -6,6 +6,9 @@ import pages.backend.InfluxDB as InfluxDB
 import pages.backend.InfluxDBConfig as InfluxDBConfig
 import pages.backend.lv.LVList as LVList
 import pages.backend.hv.HVList as HVList
+import pages.backend.hv.ChannelMap as ChannelMap
+
+channelMap = 0
 
 # Adding an entry to sys.argv is a hack to avoid that the TCP socket for the LV control
 # and the C wrapper for the HV control are re-instanciated
@@ -35,3 +38,5 @@ def init():
 	# LV power supplies could not be set up.
 	LVList.showErrors()
 	HVList.showErrors()
+
+	channelMap = ChannelMap("pages/backend/hv/channelMapping/2024-05-17.csv")

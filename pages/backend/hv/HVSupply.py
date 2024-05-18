@@ -2,6 +2,7 @@ import pages.backend.hv.CWrapper as CWrapper
 import pages.backend.Messages as Messages
 import ctypes
 
+
 class HVSupply:
 	def __init__(self, name: str, user: str, ip: str) -> None:
 		self.name = name
@@ -10,6 +11,8 @@ class HVSupply:
 		self.pw = None
 		self.cw = CWrapper.CWrapper()
 		self.messages = Messages.Messages()
+		self.N_SLOTS = 8
+		self.N_CHANNELS_PER_SLOT = 24
 
 	# -------- Login / Logout / Timeout --------
 		
@@ -142,42 +145,6 @@ class HVSupply:
 		if self.isError("getRampSpeedDown", reply):
 			return [None,]
 		return reply
-	
-	# -------- Channel mapping --------
-
-	# Map the combination of slot and channel number
-	# on a global channel number running over all channels of HIME
-	def slotAndCh_to_himeCh(self, slot: int, ch: int) -> int:
-		if ch < 0 or ch >= 48 or slot < 0:
-			return -1
-		if slot < 9:
-			return slot * 48 + ch
-		if slot == 10:
-			return 432 + ch
-		if slot == 12:
-			return 480 + ch
-		if slot == 14:
-			return 528 + ch
-		return -1
-	
-	def layerToSlotsAndChannels(self, layer: int):
-		defaultReturnVal = [[-1, -1, -1],[-1, -1, -1]]
-		if layer < 1:
-			return defaultReturnVal
-		if layer > 2:
-			return defaultReturnVal
-		if layer == 1:
-			slots = [2, 0]
-			chStart = 0
-			chStop = 24
-		if layer == 2:
-			slots = [4, 6]
-			chStart = 0
-			chStop = 24
-		return [[slots[0], chStart, chStop],[slots[1], chStart, chStop]]
-	
-	def isHorizontal(self, layer: int) -> bool:
-		return layer % 2 == 0
 	
 	def setVoltage_layer(self, layer: int, voltage: float) -> str:
 		slotsAndChannels = self.layerToSlotsAndChannels(layer)

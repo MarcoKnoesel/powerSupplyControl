@@ -4,6 +4,9 @@ import streamlit as st
 hvSupplyList = []
 hvSupplyNameList = []
 hvConnectionErrors = []
+hvCratesSlotsChannels = []
+himeChannels = []
+himeLayers = []
 
 def define_hv(name: str, user: str, ip: str) -> None:
 	if len(name) == 0 or name in hvSupplyNameList:

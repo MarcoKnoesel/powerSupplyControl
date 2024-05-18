@@ -1,0 +1,249 @@
+import pages.backend.hv.CSVHelper as csvh
+import pages.backend.hv.HVList as HVList
+import numpy as np
+import pages.backend.hv.HIMEConstants as HIMEConstants
+
+#TODO
+# warning messages when -1 is returned
+# put HIME constants in a separate file (n layers and channels)
+# create a class "ChannelMap" out of this, so himeChannels can be shared between methods
+
+#TODO remove print statements in __init__
+
+class ChannelMap:
+
+	# This constructor reads a CSV file defining the mapping from the channel numbers given by
+	#   (FPGA number) * 48 + (dac chain number) * 16 + (PaDiWa channel)
+	# (-> this is called "HIME channel" in the following)
+	# to HV channels, i.e. combinations of the crate number, the slot number of an HV module
+	# and the number of a channel of that module.
+	def __init__(self, path: str):
+		self.errors = []
+		self.warnings = []
+
+		HVList.hvCratesSlotsChannels = [[-1, -1, -1] for i in range(0, HIMEConstants.N_HIME_CHANNELS)]
+		HVList.himeChannels = [
+			[
+				[ 
+					-1 for i in range(0, HVList.hvSupplyList[k].N_CHANNELS_PER_SLOT) 
+				] 
+				for j in range(0, HVList.hvSupplyList[k].N_SLOTS)
+			] 
+			for k in range(0, len(HVList.hvSupplyList)) 
+		]
+		HVList.himeLayers = [[] for k in range(0, HIMEConstants.N_LAYERS)]
+		
+		try:
+			csvFile = open(path, "r")
+		except:
+			self.errors.append("CSV file for channel mapping not found!")
+			return
+		
+		csvList = csvFile.readlines()
+
+		for line in csvList:
+			if csvh.isComment(line):
+				continue
+			commaPositions = csvh.findPosOfCharInString(",", line)
+			if commaPositions == None:
+				self.warnings.append("Comma not found in line \"" + line + "\"! Line is ignored.")
+				continue
+			entryCounter = 0
+			# -------- HV crate --------
+			try:
+				crate = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to integer value failed for the crate number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if crate < 0 or crate >= len(HVList.hvSupplyList):
+				self.warnings.append("Invalid crate number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- HV slot --------
+			try:
+				slot = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to integer value failed for the slot number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if slot < 0 or slot >= HVList.hvSupplyList[crate].N_SLOTS:
+				self.warnings.append("Invalid slot number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- HV channel --------
+			try:
+				channel = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to integer value failed for the channel number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if channel < 0 or channel >= HVList.hvSupplyList[crate].N_CHANNELS_PER_SLOT:
+				self.warnings.append("Invalid channel number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- FPGA --------
+			try:
+				fpga = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the FPGA number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if fpga < 0 or fpga >= HIMEConstants.N_FPGAS:
+				self.warnings.append("Invalid FPGA number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- DAC chain --------
+			try:
+				dacChain = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if dacChain < 0 or dacChain >= HIMEConstants.N_DACCHAINS:
+				self.warnings.append("Invalid DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- PaDiWa channel (0 - 16) --------
+			try:
+				padiwaChannel = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the HIME channel in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if padiwaChannel < 0 or padiwaChannel >= HIMEConstants.N_PADIWA_CHANNELS:
+				self.warnings.append("Invalid HIME channel in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			
+			himeCh = fpga * 48 + dacChain * 16 + padiwaChannel
+
+			if HVList.himeChannels[crate][slot][channel] != -1:
+				self.warnings.append("Line \"" + line + "\" is ignored because this channel has been initialized before!")
+				continue
+
+			HVList.hvCratesSlotsChannels[himeCh] = [crate, slot, channel]
+			HVList.himeChannels[crate][slot][channel] = himeCh
+
+		for i in range(0, len(HVList.hvCratesSlotsChannels)):
+			entry = HVList.hvCratesSlotsChannels[i]
+			print(str(i)+ ": ----> crate " + str(entry[0]) + "    slot " + str(entry[1]) + "    HV channel " + str(entry[2]))
+
+		for crate in range(0, len(HVList.himeChannels)):
+			for slot in range(0, len(HVList.himeChannels[crate])):
+				for channel in range(0, len(HVList.himeChannels[crate][slot])):
+					print("crate " + str(crate) + "    slot " + str(slot) + "    HV channel " + str(channel) + ": ---->   himeChannel " + str(HVList.himeChannels[crate][slot][channel]))
+
+		for layer in range(0, HIMEConstants.N_LAYERS):
+			self.createMapping_layerToHVChannels(layer)
+
+		for layer in range(0, HIMEConstants.N_LAYERS):
+			print("*** Layer " + str(layer) + " ***")
+			for entry in HVList.himeLayers[layer]:
+				print(entry)				
+
+	# This function creates for each layer of the HIME detector
+	# a list of arrays, where each one has the following structure:
+	# [number of the hv crate,    number of the HV slot,    chStart,    chStop]
+	#
+	# This allows to manipulate multiple channels (all channels from chStart to chStop - 1)
+	# of the same slot at the same time efficiently
+	# using the functions "const char* HVGetChParam(...)" and "const char* HVSetChParam(...)"
+	# defined in the C file "pages/backend/hv/CAENHVWrapper-6.3/himeHV/HVWrapper.c".
+	#
+	# For each slot, this function needs to find **HV channel numbers with a difference of 1**
+	# that are connected to the same layer; that's why it's a little complicated...
+	def createMapping_layerToHVChannels(self, layer: int):
+		# create a temporary empty array
+		# -> first index is for the number of the HV crate
+		# -> second index is for the slot 
+		# For each slot, the HV channels are listed that are connected to the same hime layer,
+		# but not yet in the right order.
+		unsortedChannels = [
+			[
+				[] for j in range(0, HVList.hvSupplyList[i].N_SLOTS)
+			] for i in range(0, len(HVList.hvSupplyList))
+		]
+		
+		
+		himeChannelsOfCurrentLayer = range(layer * 48, (layer + 1) * 48)
+
+		for himeCh in himeChannelsOfCurrentLayer:
+			iHV = HVList.hvCratesSlotsChannels[himeCh][0]
+			slot = HVList.hvCratesSlotsChannels[himeCh][1]
+			ch = HVList.hvCratesSlotsChannels[himeCh][2]
+			unsortedChannels[iHV][slot].append(ch)
+		
+		for iHV in range(0, len(unsortedChannels)):
+
+			for slot in range(0, len(unsortedChannels[iHV])):
+			
+				if len(unsortedChannels[iHV][slot]) == 0:
+					continue
+
+				sortedChannels = np.sort(np.array(unsortedChannels[iHV][slot]))
+				
+				chStart = sortedChannels[0]
+				chStop = chStart + 1
+				HVList.himeLayers[layer].append([iHV, slot, chStart, chStop])
+
+				for i in range(1, len(sortedChannels)):
+
+					chCurrent = sortedChannels[i]
+				
+					if chCurrent - HVList.himeLayers[layer][-1][-1] == 0:
+						# update chStop of the current slot
+						HVList.himeLayers[layer][-1][-1] += 1
+					else:
+						# start filling a new slot
+						HVList.himeLayers[layer].append([iHV, slot, chCurrent, chCurrent + 1])
+
+
+	# clear warning and error messages
+	def clearMessages(self) -> None:
+		self.warnings.clear()
+		self.errors.clear()
+
+	#
+	# HV crate, HV slot, HV channel ---> HIME channel
+	#
+	# Map the combination of HV crate, slot and channel number
+	# on a global channel number running over all channels of HIME
+	def crateSlotCh_to_himeCh(self, crate: int, slot: int, ch: int) -> int:
+		try:
+			return HVList.himeChannels[crate][slot][ch]
+		except:
+			self.warnings.append("No HIME channel found for crate " + str(crate) + ", slot " + str(slot) + " and channel " + str(ch) + "!")
+		return -1
+
+	#
+	# HIME layer ---> HV crate, HV slot, HV channel
+	#
+	# Pass a layer number of HIME as a parameter
+	# -> get a list of arrays of the following form:
+	#   [HV crate,   HV slot,   chStart,   chStop]
+	#
+	# This allows to manipulate all channels from chStart to chStop - 1
+	# (for each HV crate and HV slot the layer is connected to)
+	def layer_to_cratesSlotsChannels(self, layer: int):
+		try:
+			# this can cause an IndexError
+			hvChannels = HVList.himeLayers[layer]
+			# even if there's no index error, there might be layers which have no HV channels assigned
+			# (depends on the content of the CSV file)
+			# -> raise an exception
+			if hvChannels[0][0] == -1:
+				raise Exception()
+			return hvChannels
+		except:
+			self.warnings.append("No HV channels found for layer " + str(layer) + "!")
+		return [[-1, -1, -1, -1]]
+
+	# 
+	# HIME channel ---> HV crate, HV slot, HV channel
+	#
+	# Pass a HIME channel as parameter, which is given by
+	#   (FPGA number) * 48 + (dac chain number) * 16 + (PaDiWa channel)
+	# -> get an array of the following form:
+	#   [HV crate,   HV slot,   chStart,   chStop]
+	#
+	# This allows to manipulate all channels from chStart to chStop - 1
+	# (for each HV crate and HV slot the layer is connected to)
+	def himeCh_to_slotAndCh(self, himeCh: int):
+		numberOfHVChannelsPerSlot = 48
+		ch = himeCh % numberOfHVChannelsPerSlot
+		slot = (himeCh - ch) / numberOfHVChannelsPerSlot
+		return [[slot, ch, ch + 1]]
