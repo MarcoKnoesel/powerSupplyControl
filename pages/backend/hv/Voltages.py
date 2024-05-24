@@ -14,7 +14,7 @@ def readVoltagesFromCSV():
 
 	voltages = []
 	try:
-		csvFile = open("pages/backend/hv/voltages.csv", "r")
+		csvFile = open("pages/backend/hv/voltages/2024-05-24.csv", "r")
 	except:
 		readVoltagesFromCSV_errors.append("CSV file for voltages not found!")
 		return voltages

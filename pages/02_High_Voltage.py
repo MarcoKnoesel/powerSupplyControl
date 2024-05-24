@@ -6,6 +6,7 @@ import pages.backend.hv.CrateMap as CrateMap
 import pages.backend.hv.ChannelParameters as ChannelParameters
 import pages.backend.InfluxDB as InfluxDB
 import pages.backend.hv.Voltages as Voltages
+import pages.backend.hv.Layer as Layer
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -138,12 +139,6 @@ else:
 				st.session_state.loggedIn = False
 
 		login_col_1.button("Logout", on_click = logOut)
-
-
-		st.header("Switch the Complete HV Supply On/Off")
-		switch_on_col, switch_off_col = st.columns(2)
-		switch_on_col.button("Switch on all channels :rocket:", on_click = st.session_state.hv.pwOn_crate)
-		switch_off_col.button("Switch off all channels :zzz:", on_click = st.session_state.hv.pwOff_crate)
 		
 		st.divider()
 
@@ -164,12 +159,12 @@ else:
 
 		currentLayer = int(st.session_state.layerStr[6:])
 
-		layer_col1.button("Switch layer on :rocket:", on_click = st.session_state.hv.pwOn_layer, args = (currentLayer,))
-		layer_col1.button("Switch layer off :zzz:", on_click = st.session_state.hv.pwOff_layer, args = (currentLayer,))
+		layer_col1.button("Switch layer on :rocket:", on_click = Layer.pwOn, args = (currentLayer,))
+		layer_col1.button("Switch layer off :zzz:", on_click = Layer.pwOff, args = (currentLayer,))
 
 		def changeLayerVoltage() -> None:
 			if st.session_state.layer_voltage != None:
-				st.session_state.hv.setVoltage_layer(currentLayer, st.session_state.layer_voltage)
+				Layer.setVoltage(currentLayer, st.session_state.layer_voltage)
 				st.session_state.layer_voltage = None
 
 		st.session_state.layer_voltage = layer_col2.number_input("Set target voltage for this layer (V) :level_slider:", value = None, placeholder = "Voltage (V)", min_value=0, max_value = 1550)
@@ -187,16 +182,15 @@ else:
 
 		col1, col2 = st.columns(2)
 
-		if st.session_state.hv.isHorizontal(currentLayer):
+		if Layer.isHorizontal(currentLayer):
 			col1.markdown("**" + st.session_state.layerStr + ": Left PMTs** :arrow_left:")
 			col2.markdown("**" + st.session_state.layerStr + ": Right PMTs** :arrow_right:")
 		else:
 			col1.markdown("**" + st.session_state.layerStr + ": Top PMTs** :arrow_up:")
 			col2.markdown("**" + st.session_state.layerStr + ": Bottom PMTs** :arrow_down:")
-#TODO add support for multiple HV crates
-		slotAndChs = st.session_state.hv.layerToSlotsAndChannels(currentLayer)
-		df1 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[0][0], slotAndChs[0][1], slotAndChs[0][2])
-		df2 = ChannelParameters.channelParametersToDataframe(st.session_state.hv, slotAndChs[1][0], slotAndChs[1][1], slotAndChs[1][2])
+		
+		df1 = ChannelParameters.channelParametersToDataframe(currentLayer)
+		df2 = ChannelParameters.channelParametersToDataframe(currentLayer)
 		col1.dataframe(df1, hide_index = True, height = round(5.5 * (df1.size + 1)) )
 		col2.dataframe(df2, hide_index = True, height = round(5.5 * (df2.size + 1)) )
 		
@@ -212,20 +206,20 @@ else:
 			On the right side, you can send these voltages by clicking the corresponding button."
 		)
 
-		#col_setVoltage_1, col_setVoltage_2 = st.columns(2)
+		col_setVoltage_1, col_setVoltage_2 = st.columns(2)
 
-		#col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
+		col_setVoltage_1.subheader("Imported from CSV file :clipboard:")
 
-		#col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
+		col_setVoltage_1.dataframe(Voltages.getVoltageDataframe(), hide_index = True)
 
-		#for errorMessage in Voltages.readVoltagesFromCSV_errors:
-		#	col_setVoltage_1.error(errorMessage, icon = "❗")
+		for errorMessage in Voltages.readVoltagesFromCSV_errors:
+			col_setVoltage_1.error(errorMessage, icon = "❗")
 		
-		#for warningMessage in Voltages.readVoltagesFromCSV_warnings:
-		#	col_setVoltage_1.warning(warningMessage, icon = "⚠️")
+		for warningMessage in Voltages.readVoltagesFromCSV_warnings:
+			col_setVoltage_1.warning(warningMessage, icon = "⚠️")
 
-		#col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
-
+		col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
+#TODO specify filename of the CSV file on the webpage
 		#def setVoltagesFromCSV() -> None:
 		#	voltagesFromCSV = Voltages.readVoltagesFromCSV()
 		#	for i in range(0, len(voltagesFromCSV)):

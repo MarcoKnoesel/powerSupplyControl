@@ -11,7 +11,7 @@ class HVSupply:
 		self.pw = None
 		self.cw = CWrapper.CWrapper()
 		self.messages = Messages.Messages()
-		self.N_SLOTS = 8
+		self.N_SLOTS = 9
 		self.N_CHANNELS_PER_SLOT = 24
 
 	# -------- Login / Logout / Timeout --------
@@ -56,7 +56,6 @@ class HVSupply:
 		self.isError("logout", reply)
 	
 	def checkConnection(self) -> int:
-		#print("checkConnection")
 		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
 		# no connection; most probably due to timeout
 		if reply == "!!5" or reply == "!!4098":
@@ -94,21 +93,6 @@ class HVSupply:
 		return False
 	
 	# -------- Get data from the HV supply --------
-	
-	# Map the combination of slot and channel number
-	# on a global channel number running over all channels of HIME
-	def slotAndCh_to_himeCh(self, slot: int, ch: int) -> int:
-		if ch < 0 or ch >= 48 or slot < 0:
-			return -1
-		if slot < 9:
-			return slot * 48 + ch
-		if slot == 10:
-			return 432 + ch
-		if slot == 12:
-			return 480 + ch
-		if slot == 14:
-			return 528 + ch
-		return -1
 
 	def getMap(self) -> str:
 		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
@@ -118,63 +102,48 @@ class HVSupply:
 	
 	def measureVoltages(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("VMon", slot, channelStart, channelStop)
-		if self.isError("measureVoltages", reply):
+		if self.isError("measureVoltages", str(reply[0])):
 			return [None,]
 		return reply
 	
 	def measureCurrents(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("IMon", slot, channelStart, channelStop) 
-		if self.isError("measureCurrents", reply):
+		if self.isError("measureCurrents", str(reply[0])):
 			return [None,]
 		return reply
 
 	def getTargetVoltages(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("V0Set", slot, channelStart, channelStop) 
-		if self.isError("getTargetVoltages", reply):
+		if self.isError("getTargetVoltages", str(reply[0])):
 			return [None,]
 		return reply
 	
 	def getRampSpeedUp(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("RUp", slot, channelStart, channelStop) 
-		if self.isError("getRampSpeedUp", reply):
+		if self.isError("getRampSpeedUp", str(reply[0])):
 			return [None,]
 		return reply
 	
 	def getRampSpeedDown(self, slot: int, channelStart: int, channelStop: int = -1):
 		reply = self.cw.getChParam("RDWn", slot, channelStart, channelStop) 
-		if self.isError("getRampSpeedDown", reply):
+		if self.isError("getRampSpeedDown", str(reply[0])):
 			return [None,]
 		return reply
 	
-	def setVoltage_layer(self, layer: int, voltage: float) -> str:
-		slotsAndChannels = self.layerToSlotsAndChannels(layer)
-		return self.cw.setChParam_multiple("V0Set", slotsAndChannels, voltage, 0, 0)
+	def setVoltage_slotAndChannels(self, slot: int, chStart: int, chStop: int, voltage: float) -> str:
+		return self.cw.setChParam_multiple("V0Set", slot, chStart, chStop, voltage, 0, 0)
 	
 	def setVoltage_channel(self, slot: int, channel: int, voltage: float) -> str:
 		return self.cw.setChParam_single("V0Set", slot, channel, voltage, 0, 0)
+
+	def pwOn_slotAndChannels(self, slot: int, chStart: int, chStop: int) -> str:
+		return self.setChParam_multiple("Pw", slot, chStart, chStop, 0, 1, 1)
+
+	def pwOff_slotAndChannels(self, slot: int, chStart: int, chStop: int) -> str:
+		return self.setChParam_multiple("Pw", slot, chStart, chStop, 0, 0, 1)
 	
 	def pwOn_channel(self, slot: int, channel: int) -> str:
 		return self.cw.setChParam_single("Pw", slot, channel, 0, 1, 1)
 	
 	def pwOff_channel(self, slot: int, channel: int) -> str:
-		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)	
-	
-	def pwOn_layer(self, layer: int) -> str:
-		slotsAndChannels = self.layerToSlotsAndChannels(layer)
-		return self.cw.setChParam_multiple("Pw", slotsAndChannels, 0, 1, 1)
-	
-	def pwOff_layer(self, layer: int) -> str:
-		slotsAndChannels = self.layerToSlotsAndChannels(layer)
-		return self.cw.setChParam_multiple("Pw", slotsAndChannels, 0, 0, 1)
-
-	def pwOff_crate(self) -> str:
-		reply = ""
-		for layer in [1,2]:
-			reply += self.pwOff_layer(layer)
-		return reply
-
-	def pwOn_crate(self) -> str:
-		reply = ""
-		for layer in [1,2]:
-			reply += self.pwOn_layer(layer)
-		return reply
+		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)

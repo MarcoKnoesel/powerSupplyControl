@@ -57,25 +57,19 @@ class CWrapper:
 	
 	# set voltage or current for an individual channel
 	def setChParam_single(self, parameterName: str, slot: int, channel: int, value_float: float, value_int: int, useInt: bool) -> str:
-		return self.setChParam_multiple(parameterName, [[slot, channel, channel+1],], value_float, value_int, useInt)
+		return self.setChParam_multiple(parameterName, slot, channel, channel+1, value_float, value_int, useInt)
 
-	def setChParam_multiple(self, parameterName: str, slotsAndChannels, value_float: float, value_int: int, useInt: bool) -> str:
+	def setChParam_multiple(self, parameterName: str, slot: int, chStart: int, chStop: int, value_float: float, value_int: int, useInt: bool) -> str:
 		function = self.libHVWrapper.HVSetChParam
 		function.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p, ct.c_float, ct.c_int, ct.c_ulong]
 		# c_char_p would lead to automatic conversion to python byte_string,
 		# which we don't want, so we can still apply free() on the pointer.
 		# Therefore, restype = c_void:
 		function.restype = ct.c_void_p 
-		reply = ""
-		for i in range(0,len(slotsAndChannels)):
-			slot = slotsAndChannels[i][0]
-			channelStart = slotsAndChannels[i][1]
-			channelStop = slotsAndChannels[i][2]
-			ptr = function(slot, channelStart, channelStop, parameterName.encode("utf-8"), value_float, value_int, useInt)
-			bytes = ct.cast(ptr, ct.c_char_p).value
-			self.free(ptr)
-			reply += bytes.decode("utf-8")
-		return reply
+		ptr = function(slot, chStart, chStop, parameterName.encode("utf-8"), value_float, value_int, useInt)
+		bytes = ct.cast(ptr, ct.c_char_p).value
+		self.free(ptr)
+		return bytes.decode("utf-8")
 	
 	# send a command and get the reply of the HV supply
 	def receiveString(self, function, parameterStr: str = None, removeLF: bool = True) -> str:

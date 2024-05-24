@@ -8,8 +8,6 @@ import pages.backend.lv.LVList as LVList
 import pages.backend.hv.HVList as HVList
 import pages.backend.hv.ChannelMap as ChannelMap
 
-channelMap = 0
-
 # Adding an entry to sys.argv is a hack to avoid that the TCP socket for the LV control
 # and the C wrapper for the HV control are re-instanciated
 # every time a new streamlit session is started. 
@@ -26,6 +24,8 @@ def init():
 		# Initialize LV and HV supplies
 		LVDef.init()
 		HVDef.init()
+		# Create channel map
+		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-05-17.csv")
 		# Start threads for writing data to InfluxDB
 		if InfluxDBConfig.writeTime >= 0:
 			for i in range(0, len(LVList.lvSupplyList)):
@@ -38,5 +38,3 @@ def init():
 	# LV power supplies could not be set up.
 	LVList.showErrors()
 	HVList.showErrors()
-
-	channelMap = ChannelMap("pages/backend/hv/channelMapping/2024-05-17.csv")

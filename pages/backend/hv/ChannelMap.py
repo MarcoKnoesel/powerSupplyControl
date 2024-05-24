@@ -5,8 +5,6 @@ import pages.backend.hv.HIMEConstants as HIMEConstants
 
 #TODO
 # warning messages when -1 is returned
-# put HIME constants in a separate file (n layers and channels)
-# create a class "ChannelMap" out of this, so himeChannels can be shared between methods
 
 #TODO remove print statements in __init__
 
@@ -21,7 +19,11 @@ class ChannelMap:
 		self.errors = []
 		self.warnings = []
 
+		# map the HIME-channel number on an array of the form
+		# [HV crate, HV slot, HV channel]
 		HVList.hvCratesSlotsChannels = [[-1, -1, -1] for i in range(0, HIMEConstants.N_HIME_CHANNELS)]
+		# map a combination of HV crate, HV slot, HV channel
+		# on HIME channel
 		HVList.himeChannels = [
 			[
 				[ 
@@ -31,6 +33,8 @@ class ChannelMap:
 			] 
 			for k in range(0, len(HVList.hvSupplyList)) 
 		]
+		# map HIME layers on a list of
+		# [HV crate, HV Slot, HV chStart, HV chStop] arrays
 		HVList.himeLayers = [[] for k in range(0, HIMEConstants.N_LAYERS)]
 		
 		try:
@@ -165,6 +169,8 @@ class ChannelMap:
 			iHV = HVList.hvCratesSlotsChannels[himeCh][0]
 			slot = HVList.hvCratesSlotsChannels[himeCh][1]
 			ch = HVList.hvCratesSlotsChannels[himeCh][2]
+			if iHV == -1 or slot == -1 or ch == -1:
+				continue
 			unsortedChannels[iHV][slot].append(ch)
 		
 		for iHV in range(0, len(unsortedChannels)):
@@ -176,15 +182,21 @@ class ChannelMap:
 
 				sortedChannels = np.sort(np.array(unsortedChannels[iHV][slot]))
 				
+				# after sorting, find sequences of HV channels in a specific HV slot,
+				# which are connected to the same HIME layer
 				chStart = sortedChannels[0]
 				chStop = chStart + 1
+				# all channels from chStart (inclusively) to chStop (exclusively)
+				# are connected to the current HIME layer
 				HVList.himeLayers[layer].append([iHV, slot, chStart, chStop])
 
 				for i in range(1, len(sortedChannels)):
 
 					chCurrent = sortedChannels[i]
 				
-					if chCurrent - HVList.himeLayers[layer][-1][-1] == 0:
+					# check if the difference of two HV-channel numbers is 1;
+					# i.e. if chCurrent is equal to chStop
+					if chCurrent == HVList.himeLayers[layer][-1][-1]:
 						# update chStop of the current slot
 						HVList.himeLayers[layer][-1][-1] += 1
 					else:

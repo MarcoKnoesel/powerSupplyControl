@@ -7,6 +7,7 @@ hvConnectionErrors = []
 hvCratesSlotsChannels = []
 himeChannels = []
 himeLayers = []
+channelMap = None
 
 def define_hv(name: str, user: str, ip: str) -> None:
 	if len(name) == 0 or name in hvSupplyNameList:
