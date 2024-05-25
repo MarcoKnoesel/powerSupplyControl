@@ -137,13 +137,25 @@ class HVSupply:
 		return self.cw.setChParam_single("V0Set", slot, channel, voltage, 0, 0)
 
 	def pwOn_slotAndChannels(self, slot: int, chStart: int, chStop: int) -> str:
-		return self.setChParam_multiple("Pw", slot, chStart, chStop, 0, 1, 1)
+		return self.cw.setChParam_multiple("Pw", slot, chStart, chStop, 0, 1, 1)
 
 	def pwOff_slotAndChannels(self, slot: int, chStart: int, chStop: int) -> str:
-		return self.setChParam_multiple("Pw", slot, chStart, chStop, 0, 0, 1)
+		return self.cw.setChParam_multiple("Pw", slot, chStart, chStop, 0, 0, 1)
 	
 	def pwOn_channel(self, slot: int, channel: int) -> str:
 		return self.cw.setChParam_single("Pw", slot, channel, 0, 1, 1)
 	
 	def pwOff_channel(self, slot: int, channel: int) -> str:
 		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)
+	
+	def getStatus_slotAndChannels(self, slot: int, chStart: int, chStop: int):
+		reply = self.cw.getChParam("Pw", slot, chStart, chStop) 
+		if self.isError("getStatus_slotAndChannels", str(reply[0])):
+			return [None,]
+		statusList = []
+		for entry in reply:
+			if entry == 0:
+				statusList += ["Off",]
+			else:
+				statusList += ["On",]
+		return statusList

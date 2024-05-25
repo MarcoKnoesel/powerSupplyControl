@@ -36,6 +36,11 @@ class ChannelMap:
 		# map HIME layers on a list of
 		# [HV crate, HV Slot, HV chStart, HV chStop] arrays
 		HVList.himeLayers = [[] for k in range(0, HIMEConstants.N_LAYERS)]
+		# hime channel -> FPGA, DAC chain, PaDiWa channel, Layer, module number of that layer 
+		# *** module ID != module number ***
+		# The module ID runs over all modules of HIME and is different
+		# from the module number of a specific layer!
+		HVList.channelDetails = [None for i in range(0, HIMEConstants.N_HIME_CHANNELS)]
 		
 		try:
 			csvFile = open(path, "r")
@@ -112,8 +117,37 @@ class ChannelMap:
 			if padiwaChannel < 0 or padiwaChannel >= HIMEConstants.N_PADIWA_CHANNELS:
 				self.warnings.append("Invalid HIME channel in line \"" + str(line) + "\"! Line is ignored.")
 				continue
+			entryCounter += 1
+			# -------- HIME layer --------
+			try:
+				himeLayer = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the HIME layer in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if himeLayer < 0 or himeLayer >= HIMEConstants.N_LAYERS:
+				self.warnings.append("Invalid HIME layer in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- HIME module number in this layer --------
+			try:
+				moduleNumber = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			if moduleNumber < 0 or moduleNumber >= HIMEConstants.N_MODULES_PER_LAYER:
+				self.warnings.append("Invalid HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
+			entryCounter += 1
+			# -------- Position: 0 -> right/down or 1 -> left/up --------
+			try:
+				position = int(csvh.getEntry(line, commaPositions, entryCounter))
+			except:
+				self.warnings.append("Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				continue
 			
 			himeCh = fpga * 48 + dacChain * 16 + padiwaChannel
+
+			HVList.channelDetails[himeCh] = [fpga, dacChain, padiwaChannel, himeLayer, moduleNumber, position]
 
 			if HVList.himeChannels[crate][slot][channel] != -1:
 				self.warnings.append("Line \"" + line + "\" is ignored because this channel has been initialized before!")
@@ -259,3 +293,9 @@ class ChannelMap:
 		ch = himeCh % numberOfHVChannelsPerSlot
 		slot = (himeCh - ch) / numberOfHVChannelsPerSlot
 		return [[slot, ch, ch + 1]]
+	
+	def getChannelDetails(self, himeCh: int):
+		return HVList.channelDetails[himeCh]
+	
+	def crateSlotAndChannel_to_himeCh(self, crate: int, slot: int, channel: int) -> int:
+		return HVList.himeChannels[crate][slot][channel]

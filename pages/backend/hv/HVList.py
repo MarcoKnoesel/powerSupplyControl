@@ -4,9 +4,16 @@ import streamlit as st
 hvSupplyList = []
 hvSupplyNameList = []
 hvConnectionErrors = []
+# hime channel -> [HV crate, HV slot, HV channel]
 hvCratesSlotsChannels = []
+# [HV crate][HV slot][HV channel] -> hime channel
 himeChannels = []
+# hime layer -> [[HV crate, HV slot, HV channel], ...]
 himeLayers = []
+# hime channel -> FPGA, DAC chain, PaDiWa channel, Layer, module ID 
+# (The module ID runs over all modules of HIME and is different
+# from the module number of a specific layer!)
+channelDetails = []
 channelMap = None
 
 def define_hv(name: str, user: str, ip: str) -> None:

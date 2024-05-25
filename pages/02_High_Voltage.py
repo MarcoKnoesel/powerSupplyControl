@@ -180,20 +180,21 @@ else:
 		st.markdown("Tip: Use `Shift + Mouse Wheel` to scroll left/right or choose \"Wide mode\" in the settings.")	  
 		st.markdown("...and don't forget to press the `R` key to see the effect of your voltage settings! :eyes:")
 
-		col1, col2 = st.columns(2)
+		channelPar_col0, channelPar_col1 = st.columns(2)
 
 		if Layer.isHorizontal(currentLayer):
-			col1.markdown("**" + st.session_state.layerStr + ": Left PMTs** :arrow_left:")
-			col2.markdown("**" + st.session_state.layerStr + ": Right PMTs** :arrow_right:")
+			channelPar_col0.markdown("**" + st.session_state.layerStr + ": Left PMTs** :arrow_left:")
+			channelPar_col1.markdown("**" + st.session_state.layerStr + ": Right PMTs** :arrow_right:")
 		else:
-			col1.markdown("**" + st.session_state.layerStr + ": Top PMTs** :arrow_up:")
-			col2.markdown("**" + st.session_state.layerStr + ": Bottom PMTs** :arrow_down:")
+			channelPar_col0.markdown("**" + st.session_state.layerStr + ": Top PMTs** :arrow_up:")
+			channelPar_col1.markdown("**" + st.session_state.layerStr + ": Bottom PMTs** :arrow_down:")
 		
-		df1 = ChannelParameters.channelParametersToDataframe(currentLayer)
-		df2 = ChannelParameters.channelParametersToDataframe(currentLayer)
-		col1.dataframe(df1, hide_index = True, height = round(5.5 * (df1.size + 1)) )
-		col2.dataframe(df2, hide_index = True, height = round(5.5 * (df2.size + 1)) )
-		
+		dfList = ChannelParameters.channelParametersToDataframe(currentLayer)
+		for pos in [0,1]:
+			[channelPar_col0, channelPar_col1][pos].dataframe(dfList[pos], hide_index = True, height = round(5.5 * (dfList[pos].size + 1)) )
+		#df.index = df.index + chStart
+		#df.index.names = ["Channel"]
+
 		st.divider()
 
 		# -------- Full Detector --------
@@ -220,17 +221,21 @@ else:
 
 		col_setVoltage_2.subheader("Send voltages :satellite_antenna:")
 #TODO specify filename of the CSV file on the webpage
-		#def setVoltagesFromCSV() -> None:
-		#	voltagesFromCSV = Voltages.readVoltagesFromCSV()
-		#	for i in range(0, len(voltagesFromCSV)):
-		#			voltage = voltagesFromCSV[i][1]
-		#			if voltage != None:
-		#				st.session_state.hv.setVoltage_channel(2 * voltagesFromCSV[i][0], voltage)
-		#				st.session_state.hv.setVoltage_channel(2 * voltagesFromCSV[i][0]+1, voltage)
+		def setVoltagesFromCSV() -> None:
+			voltagesFromCSV = Voltages.readVoltagesFromCSV()
+			for i in range(0, len(voltagesFromCSV)):
+					voltage = voltagesFromCSV[i][1]
+					himeChannel = voltagesFromCSV[i][0]
+					cratesSlotsAndChannels = HVList.hvCratesSlotsChannels[himeChannel]
+					if voltage != None and cratesSlotsAndChannels[0] != -1:
+						crate = cratesSlotsAndChannels[0]
+						slot = cratesSlotsAndChannels[1]
+						hvChannel = cratesSlotsAndChannels[2]
+						HVList.hvSupplyList[crate].setVoltage_channel(slot, hvChannel, voltage)
 
 #TODO set voltages for individual channels and show mapping from crate,slot,hvChannel to fpga,dacChain,padiwaChannel
 
-		#col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
+		col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
 
 		# -------- System Map --------
 

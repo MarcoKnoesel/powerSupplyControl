@@ -1,8 +1,7 @@
-import pages.backend.InitPowerSupplies as Init
 import pages.backend.hv.HVList as HVList
 
 def pwOn(layer: int) -> str:
-	cratesSlotsChannels = Init.channelMap.layer_to_cratesSlotsChannels(layer)
+	cratesSlotsChannels = HVList.channelMap.layer_to_cratesSlotsChannels(layer)
 	reply = ""
 	for entry in cratesSlotsChannels:
 		crate = entry[0]
@@ -13,7 +12,7 @@ def pwOn(layer: int) -> str:
 	return reply
 
 def pwOff(layer: int) -> str:
-	cratesSlotsChannels = Init.channelMap.layer_to_cratesSlotsChannels(layer)
+	cratesSlotsChannels = HVList.channelMap.layer_to_cratesSlotsChannels(layer)
 	reply = ""
 	for entry in cratesSlotsChannels:
 		crate = entry[0]
@@ -24,7 +23,7 @@ def pwOff(layer: int) -> str:
 	return reply
 
 def setVoltage(layer: int, voltage) -> str:
-	cratesSlotsChannels = Init.channelMap.layer_to_cratesSlotsChannels(layer)
+	cratesSlotsChannels = HVList.channelMap.layer_to_cratesSlotsChannels(layer)
 	reply = ""
 	for entry in cratesSlotsChannels:
 		crate = entry[0]
