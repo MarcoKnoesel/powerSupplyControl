@@ -7,7 +7,7 @@ def pwOn(layer: int) -> str:
 		crate = entry[0]
 		slot = entry[1]
 		chStart = entry[2]
-		chStop = entry[2]
+		chStop = entry[3]
 		reply += HVList.hvSupplyList[crate].pwOn_slotAndChannels(slot, chStart, chStop)
 	return reply
 
@@ -18,7 +18,7 @@ def pwOff(layer: int) -> str:
 		crate = entry[0]
 		slot = entry[1]
 		chStart = entry[2]
-		chStop = entry[2]
+		chStop = entry[3]
 		reply += HVList.hvSupplyList[crate].pwOff_slotAndChannels(slot, chStart, chStop)
 	return reply
 
@@ -29,7 +29,7 @@ def setVoltage(layer: int, voltage) -> str:
 		crate = entry[0]
 		slot = entry[1]
 		chStart = entry[2]
-		chStop = entry[2]
+		chStop = entry[3]
 		reply += HVList.hvSupplyList[crate].setVoltage_slotAndChannels(slot, chStart, chStop, voltage)
 	return reply
 

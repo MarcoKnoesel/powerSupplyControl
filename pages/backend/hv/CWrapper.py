@@ -43,6 +43,8 @@ class CWrapper:
 
 	# get an array of voltages or currents for a range of channels
 	def getChParam(self, parameterName: str, slot: int, channelStart: int, channelStop: int  = -1):
+		if channelStop == -1:
+			channelStop = channelStart + 1
 		function = self.libHVWrapper.HVGetChParam
 		function.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p]
 		# c_char_p would lead to automatic conversion to python byte_string,

@@ -7,6 +7,7 @@ import pages.backend.hv.ChannelParameters as ChannelParameters
 import pages.backend.InfluxDB as InfluxDB
 import pages.backend.hv.Voltages as Voltages
 import pages.backend.hv.Layer as Layer
+import pages.backend.hv.HIMEConstants as HIMEConstants
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -56,14 +57,14 @@ else:
 	if "layerStr" not in st.session_state:
 		st.session_state.layerStr = "Layer 0"
 
-	if "showTimeoutInfo" not in st.session_state:
-		st.session_state.showTimeoutInfo = False
-
 	if "layer_voltage" not in st.session_state:
 		st.session_state.layer_voltage = False
 
 	if "targetVoltage" not in st.session_state:
 		st.session_state.targetVoltage = -1
+
+	if "session_state.hime_channel" not in st.session_state:
+		st.session_state.hime_channel = None
 
 	# -------- Pause threads writing to InfluxDB --------
 
@@ -74,71 +75,76 @@ else:
 	st.title("Caen HV Control :joystick:")
 
 	# -------- Check connection --------
+	loggedInList = [False * len(HVList.hvSupplyList)]
 
-	connectionResult = st.session_state.hv.checkConnection()
-	# No connection
-	if connectionResult == 0:
-		st.session_state.loggedIn = False
-		loginInfoText = "Currently not logged in. :lock:"
-	# After 1 minute, the connection breaks down. 
-	# Then, all commands result in error code 5 or 4098.
-	if connectionResult == 1:
-		st.session_state.loggedIn = False
-		# Try to log in again automatically.
-		if st.session_state.hv.reconnect():
-			loginInfoText = "Logged in! :unlock:"
-			st.session_state.loggedIn = True
-		else:
-			loginInfoText = "Timeout. Please log in again."
-	# Connection works.
-	if connectionResult == 2:
-		st.session_state.loggedIn = True
-		loginInfoText = "Logged in! :unlock:"
+	for hv in HVList.hvSupplyList:
+		connectionResult = hv.checkConnection()
+		# No connection
+		if connectionResult == 0:
+			hv.loggedIn = False
+			hv.loginInfoText = "Currently not logged in. :lock:"
+		# After 1 minute, the connection breaks down. 
+		# Then, all commands result in error code 5 or 4098.
+		if connectionResult == 1:
+			hv.loggedIn = False
+			# Try to log in again automatically.
+			if hv.reconnect():
+				hv.loginInfoText = "Logged in! :unlock:"
+				hv.loggedIn = True
+			else:
+				hv.loginInfoText = "Timeout. Please log in again."
+		# Connection works.
+		if connectionResult == 2:
+			hv.loggedIn = True
+			hv.loginInfoText = "Logged in! :unlock:"
 
-	# -------- Device selection --------
-#TODO need to login at first to all crates. Otherwise it's possible that some of the HV channels for a
-# specific HIME layer cannot be reached
-	st.header(st.session_state.hv.name)
+	# -------- Check whether you are logged in or not --------
+
+	st.session_state.loggedIn = True
+
+	for hv in HVList.hvSupplyList:
+		if not hv.loggedIn:
+			st.session_state.loggedIn = False
+			break
+
+	# -------- Log in/out; show logo --------
 
 	top_col_1, top_col_2 = st.columns((6,2))
 	top_col_2.image("svg/himeLogo.svg")
 
-	selected_hv_name = top_col_1.selectbox("Choose an HV supply", HVList.hvSupplyNameList)
-
-	# check if the selected HV is different from the current one 
-	if selected_hv_name != st.session_state.hv.name:
-		st.session_state.hv = HVList.getHV(selected_hv_name)
-		st.rerun()
-
-	# -------- Show whether you are logged in or not --------
-	login_col_1, login_col_2 = top_col_1.columns(2)
-	login_col_2.info(loginInfoText, icon = "ℹ️")
-
 	# -------- Logged out --------
 
 	if not st.session_state.loggedIn:
+
+		login_cols = []
+		for i in range(0, len(HVList.hvSupplyList)):
+			c0, c1 = top_col_1.columns(2)
+			login_cols.append([c0, c1])
+			hv = HVList.hvSupplyList[i]
+			login_cols[i][1].info(hv.loginInfoText, icon = "ℹ️")
 		
-		def login() -> None:
-			if st.session_state.hv.login(st.session_state.password):
-				st.session_state.loggedIn = True
+		def login(hv) -> None:
+			if hv.login(st.session_state.password):
+				hv.loggedIn = True
 			st.session_state.password = ""
 		
-		login_col_1.text_input("Enter password for the HV supply", key = "password", type = "password", on_change = login)
+		for hv in HVList.hvSupplyList:
+			login_cols[i][0].text_input("Enter password for " + str(hv.name), key = "password", type = "password", on_change = login, args=(hv,))
 		
-		if st.session_state.showTimeoutInfo:
-			st.info("Server not reachable, most probably due to timeout. Please log in again.", icon = "ℹ️")
-			st.session_state.showTimeoutInfo = False
-
 	# -------- Logged in --------
 
 	else:
 
 		# -------- Logout button --------
 		def logOut() -> None:
-			if st.session_state.hv.logout():
-				st.session_state.loggedIn = False
+			for hv in HVList.hvSupplyList:
+				if hv.logout():
+					hv.loggedIn = False
 
-		login_col_1.button("Logout", on_click = logOut)
+		top_col_1.button("Log out from all HV supplies", on_click = logOut)
+		top_col_1.markdown("You are logged in to:")
+		for hv in HVList.hvSupplyList:
+			top_col_1.markdown(hv.name)
 		
 		st.divider()
 
@@ -237,11 +243,62 @@ else:
 
 		col_setVoltage_2.button("Send voltages now", on_click = setVoltagesFromCSV)
 
+		st.divider()
+
+		# -------- Individual channel --------
+		
+		st.header("Individual Channel")
+
+		st.markdown("The HIME channel is given by FPGA x 48 + DAC chain x 16 + PaDiWa channel.")
+#TODO status, voltage setting
+		individualChannel_cols = [st.columns(3), st.columns(3), st.columns(3), st.columns(3), st.columns(3)]
+		st.session_state.hime_channel = individualChannel_cols[0][0].number_input("HIME channel :level_slider:", value = None, placeholder = "HIME-channel number", min_value=0, max_value = HIMEConstants.N_HIME_CHANNELS)
+		if st.session_state.hime_channel != None:
+			channelDetails = HVList.channelMap.getChannelDetails(st.session_state.hime_channel)
+			if channelDetails != None:
+				individualChannel_cols[1][0].metric("FPGA", str(channelDetails[0]))
+				individualChannel_cols[1][1].metric("DAC chain", str(channelDetails[1]))
+				individualChannel_cols[1][2].metric("PaDiWa channel", str(channelDetails[2]))
+				layer = channelDetails[3]
+				individualChannel_cols[2][0].metric("Layer", str(layer))
+				individualChannel_cols[2][1].metric("Module ID", str(channelDetails[4] + layer * HIMEConstants.N_MODULES_PER_LAYER))
+				if Layer.isHorizontal(layer):
+					if channelDetails[5] == 0:
+						position = "Right"
+					else:
+						position = "Left"
+				else:
+					if channelDetails[5] == 0:
+						position = "Bottom"
+					else:
+						position = "Top"
+				crateSlotAndChannel = HVList.channelMap.himeCh_to_crateSlotAndChannel(st.session_state.hime_channel)
+				individualChannel_cols[2][2].metric("Position", position)
+				individualChannel_cols[3][0].metric("HV crate", crateSlotAndChannel[0])
+				individualChannel_cols[3][1].metric("HV slot", crateSlotAndChannel[1])
+				individualChannel_cols[3][2].metric("HV channel", crateSlotAndChannel[2])
+				hv = HVList.hvSupplyList[crateSlotAndChannel[0]]
+				slot = crateSlotAndChannel[1]
+				ch = crateSlotAndChannel[2]
+				individualChannel_cols[3][0].metric("Voltage (V)", hv.measureVoltages(slot, ch)[0])
+				individualChannel_cols[3][1].metric("Target (V)", hv.getTargetVoltages(slot, ch)[0])
+				individualChannel_cols[3][2].metric("Current (\u03BCA)", hv.measureCurrents(slot, ch)[0])
+			else:
+				st.info("Not connected.", icon = "ℹ️")
+
 		# -------- System Map --------
 
 		st.divider()
 
 		st.header("System Map :world_map:")
+
+		st.subheader(st.session_state.hv.name)
+		selected_hv_name = st.selectbox("Choose an HV supply", HVList.hvSupplyNameList)
+
+		# check if the selected HV is different from the current one 
+		if selected_hv_name != st.session_state.hv.name:
+			st.session_state.hv = HVList.getHV(selected_hv_name)
+			st.rerun()
 
 		st.dataframe(CrateMap.mapToDataframe(st.session_state.hv.getMap()), height = 620)
 

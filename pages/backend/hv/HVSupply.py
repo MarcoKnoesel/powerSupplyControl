@@ -13,6 +13,8 @@ class HVSupply:
 		self.messages = Messages.Messages()
 		self.N_SLOTS = 9
 		self.N_CHANNELS_PER_SLOT = 24
+		self.loggedIn = False
+		self.loginInfoText = ""
 
 	# -------- Login / Logout / Timeout --------
 		
@@ -113,6 +115,7 @@ class HVSupply:
 		return reply
 
 	def getTargetVoltages(self, slot: int, channelStart: int, channelStop: int = -1):
+		# if channelStop == -1, it will be set to channelStart + 1, see CWrapper.py
 		reply = self.cw.getChParam("V0Set", slot, channelStart, channelStop) 
 		if self.isError("getTargetVoltages", str(reply[0])):
 			return [None,]

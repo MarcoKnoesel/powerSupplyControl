@@ -288,14 +288,12 @@ class ChannelMap:
 	#
 	# This allows to manipulate all channels from chStart to chStop - 1
 	# (for each HV crate and HV slot the layer is connected to)
-	def himeCh_to_slotAndCh(self, himeCh: int):
-		numberOfHVChannelsPerSlot = 48
-		ch = himeCh % numberOfHVChannelsPerSlot
-		slot = (himeCh - ch) / numberOfHVChannelsPerSlot
-		return [[slot, ch, ch + 1]]
+	def himeCh_to_crateSlotAndChannel(self, himeCh: int):
+		return HVList.hvCratesSlotsChannels[himeCh]
 	
 	def getChannelDetails(self, himeCh: int):
 		return HVList.channelDetails[himeCh]
 	
 	def crateSlotAndChannel_to_himeCh(self, crate: int, slot: int, channel: int) -> int:
 		return HVList.himeChannels[crate][slot][channel]
+	#TODO fill himeChannelsOfCurrentLayer automatically
