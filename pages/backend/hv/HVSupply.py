@@ -80,7 +80,7 @@ class HVSupply:
 		# Extract the error code, if present
 		if message[0:2] == "!!":
 			messageBody = message[2:]
-			errorMessage = "[" + source + "] "
+			errorMessage = "[HVSupply." + source + "] "
 			if(len(message) < 3):
 				errorMessage = errorMessage + "Unknown error."
 			else:

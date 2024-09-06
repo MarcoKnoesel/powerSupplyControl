@@ -12,11 +12,11 @@ class Messages:
 		self.isUpdated = True
 
 	def newWarning(self, message: str) -> None:
-		self.errors.append(message)
+		self.warnings.append(message)
 		self.isUpdated = True
 
 	def newInfo(self, message: str) -> None:
-		self.errors.append(message)
+		self.info.append(message)
 		self.isUpdated = True
 
 	def print(self) -> None:

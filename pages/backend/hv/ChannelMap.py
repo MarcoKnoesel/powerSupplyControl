@@ -1,12 +1,11 @@
 import pages.backend.hv.CSVHelper as csvh
 import pages.backend.hv.HVList as HVList
+import pages.backend.Messages as Messages
 import numpy as np
 import pages.backend.hv.HIMEConstants as HIMEConstants
 
 #TODO
 # warning messages when -1 is returned
-
-#TODO remove print statements in __init__
 
 class ChannelMap:
 
@@ -16,8 +15,7 @@ class ChannelMap:
 	# to HV channels, i.e. combinations of the crate number, the slot number of an HV module
 	# and the number of a channel of that module.
 	def __init__(self, path: str):
-		self.errors = []
-		self.warnings = []
+		self.messages = Messages.Messages()
 
 		# map the HIME-channel number on an array of the form
 		# [HV crate, HV slot, HV channel]
@@ -55,94 +53,94 @@ class ChannelMap:
 				continue
 			commaPositions = csvh.findPosOfCharInString(",", line)
 			if commaPositions == None:
-				self.warnings.append("Comma not found in line \"" + line + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Comma not found in line \"" + line + "\"! Line is ignored.")
 				continue
 			entryCounter = 0
 			# -------- HV crate --------
 			try:
 				crate = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to integer value failed for the crate number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to integer value failed for the crate number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if crate < 0 or crate >= len(HVList.hvSupplyList):
-				self.warnings.append("Invalid crate number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid crate number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- HV slot --------
 			try:
 				slot = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to integer value failed for the slot number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to integer value failed for the slot number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if slot < 0 or slot >= HVList.hvSupplyList[crate].N_SLOTS:
-				self.warnings.append("Invalid slot number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid slot number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- HV channel --------
 			try:
 				channel = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to integer value failed for the channel number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to integer value failed for the channel number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if channel < 0 or channel >= HVList.hvSupplyList[crate].N_CHANNELS_PER_SLOT:
-				self.warnings.append("Invalid channel number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid channel number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- FPGA --------
 			try:
 				fpga = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the FPGA number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the FPGA number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if fpga < 0 or fpga >= HIMEConstants.N_FPGAS:
-				self.warnings.append("Invalid FPGA number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid FPGA number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- DAC chain --------
 			try:
 				dacChain = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if dacChain < 0 or dacChain >= HIMEConstants.N_DACCHAINS:
-				self.warnings.append("Invalid DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid DAC-chain number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- PaDiWa channel (0 - 16) --------
 			try:
 				padiwaChannel = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the HIME channel in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the HIME channel in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if padiwaChannel < 0 or padiwaChannel >= HIMEConstants.N_PADIWA_CHANNELS:
-				self.warnings.append("Invalid HIME channel in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid HIME channel in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- HIME layer --------
 			try:
 				himeLayer = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the HIME layer in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the HIME layer in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if himeLayer < 0 or himeLayer >= HIMEConstants.N_LAYERS:
-				self.warnings.append("Invalid HIME layer in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid HIME layer in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- HIME module number in this layer --------
 			try:
 				moduleNumber = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			if moduleNumber < 0 or moduleNumber >= HIMEConstants.N_MODULES_PER_LAYER:
-				self.warnings.append("Invalid HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Invalid HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			entryCounter += 1
 			# -------- Position: 0 -> right/down or 1 -> left/up --------
 			try:
 				position = int(csvh.getEntry(line, commaPositions, entryCounter))
 			except:
-				self.warnings.append("Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
+				self.messages.newWarning("[ChannelMap] Conversion to int value failed for the HIME-module number in line \"" + str(line) + "\"! Line is ignored.")
 				continue
 			
 			himeCh = fpga * 48 + dacChain * 16 + padiwaChannel
@@ -150,7 +148,7 @@ class ChannelMap:
 			HVList.channelDetails[himeCh] = [fpga, dacChain, padiwaChannel, himeLayer, moduleNumber, position]
 
 			if HVList.himeChannels[crate][slot][channel] != -1:
-				self.warnings.append("Line \"" + line + "\" is ignored because this channel has been initialized before!")
+				self.messages.newWarning("[ChannelMap] Line \"" + line + "\" is ignored because this channel has been initialized before!")
 				continue
 
 			HVList.hvCratesSlotsChannels[himeCh] = [crate, slot, channel]
@@ -256,7 +254,7 @@ class ChannelMap:
 		try:
 			return HVList.himeChannels[crate][slot][ch]
 		except:
-			self.warnings.append("No HIME channel found for crate " + str(crate) + ", slot " + str(slot) + " and channel " + str(ch) + "!")
+			self.messages.newWarning("[ChannelMap] No HIME channel found for crate " + str(crate) + ", slot " + str(slot) + " and channel " + str(ch) + "!")
 		return -1
 
 	#
@@ -279,7 +277,7 @@ class ChannelMap:
 				raise Exception()
 			return hvChannels
 		except:
-			self.warnings.append("No HV channels found for layer " + str(layer) + "!")
+			self.messages.newWarning("[ChannelMap] No HV channels found for layer " + str(layer) + "!")
 		return [[-1, -1, -1, -1]]
 
 	# 

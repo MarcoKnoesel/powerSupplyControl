@@ -207,10 +207,13 @@ else:
 
 		st.dataframe(CrateMap.mapToDataframe(st.session_state.hv.getMap()), height = 620)
 
-	# -------- Print error messages sent by the HV supply --------
+	# -------- Print error, warning and information messages --------
+	for hv in HVList.hvSupplyList:
+		if hv.messages.isUpdated:
+			hv.messages.print()
 
-	if st.session_state.hv.messages.isUpdated:
-		st.session_state.hv.messages.print()
+	if HVList.channelMap.messages.isUpdated:
+		HVList.channelMap.messages.print()
 
 	# -------- Last updated --------
 
