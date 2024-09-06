@@ -156,22 +156,26 @@ class ChannelMap:
 			HVList.hvCratesSlotsChannels[himeCh] = [crate, slot, channel]
 			HVList.himeChannels[crate][slot][channel] = himeCh
 
-		for i in range(0, len(HVList.hvCratesSlotsChannels)):
-			entry = HVList.hvCratesSlotsChannels[i]
-			print(str(i)+ ": ----> crate " + str(entry[0]) + "    slot " + str(entry[1]) + "    HV channel " + str(entry[2]))
-
-		for crate in range(0, len(HVList.himeChannels)):
-			for slot in range(0, len(HVList.himeChannels[crate])):
-				for channel in range(0, len(HVList.himeChannels[crate][slot])):
-					print("crate " + str(crate) + "    slot " + str(slot) + "    HV channel " + str(channel) + ": ---->   himeChannel " + str(HVList.himeChannels[crate][slot][channel]))
-
 		for layer in range(0, HIMEConstants.N_LAYERS):
 			self.createMapping_layerToHVChannels(layer)
 
-		for layer in range(0, HIMEConstants.N_LAYERS):
-			print("*** Layer " + str(layer) + " ***")
-			for entry in HVList.himeLayers[layer]:
-				print(entry)				
+		# print channel mapping
+
+#		for i in range(0, len(HVList.hvCratesSlotsChannels)):
+#			entry = HVList.hvCratesSlotsChannels[i]
+#			print(str(i)+ ": ----> crate " + str(entry[0]) + "    slot " + str(entry[1]) + "    HV channel " + str(entry[2]))
+
+#		for crate in range(0, len(HVList.himeChannels)):
+#			for slot in range(0, len(HVList.himeChannels[crate])):
+#				for channel in range(0, len(HVList.himeChannels[crate][slot])):
+#					print("crate " + str(crate) + "    slot " + str(slot) + "    HV channel " + str(channel) + ": ---->   himeChannel " + str(HVList.himeChannels[crate][slot][channel]))
+
+#		for layer in range(0, HIMEConstants.N_LAYERS):
+#			print("*** Layer " + str(layer) + " ***")
+#			for entry in HVList.himeLayers[layer]:
+#				print(entry)				
+
+
 
 	# This function creates for each layer of the HIME detector
 	# a list of arrays, where each one has the following structure:

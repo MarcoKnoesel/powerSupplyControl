@@ -9,7 +9,7 @@ class HVSupply:
 		self.user = user
 		self.ip = ip
 		self.pw = None
-		self.cw = CWrapper.CWrapper()
+		self.cw = CWrapper.CWrapper(ip)
 		self.messages = Messages.Messages()
 		self.N_SLOTS = 9
 		self.N_CHANNELS_PER_SLOT = 24
@@ -97,6 +97,8 @@ class HVSupply:
 	# -------- Get data from the HV supply --------
 
 	def getMap(self) -> str:
+		if self.checkConnection() != 2:
+			self.reconnect()
 		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
 		if self.isError("getMap", reply):
 			return ""
@@ -152,13 +154,18 @@ class HVSupply:
 		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)
 	
 	def getStatus_slotAndChannels(self, slot: int, chStart: int, chStop: int):
-		reply = self.cw.getChParam("Pw", slot, chStart, chStop) 
+		reply = self.cw.getChParamStr("Pw", slot, chStart, chStop, 1) 
+		#print("reply is")
+		#print(reply)
+		#print("len(reply) is")
+		#print(len(reply))
 		if self.isError("getStatus_slotAndChannels", str(reply[0])):
 			return [None,]
-		statusList = []
-		for entry in reply:
-			if entry == 0:
-				statusList += ["Off",]
-			else:
-				statusList += ["On",]
-		return statusList
+		return reply
+		#statusList = []
+		#for entry in reply:
+		#	if entry == 0:
+		#		statusList += ["Off",]
+		#	else:
+		#		statusList += ["On",]
+		#return statusList

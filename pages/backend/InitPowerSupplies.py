@@ -25,7 +25,7 @@ def init():
 		LVDef.init()
 		HVDef.init()
 		# Create channel map
-		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-05-17.csv")
+		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-06-10.csv")
 		# Start threads for writing data to InfluxDB
 		if InfluxDBConfig.writeTime >= 0:
 			for i in range(0, len(LVList.lvSupplyList)):

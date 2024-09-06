@@ -23,9 +23,9 @@ class Messages:
 		for message in self.errors:
 			st.error(message, icon = "❗")
 		for message in self.warnings:
-			st.error(message, icon = "⚠️")
+			st.warning(message, icon = "⚠️")
 		for message in self.info:
-			st.error(message, icon = "ℹ️")
+			st.info(message, icon = "ℹ️")
 		self.errors.clear()
 		self.warnings.clear()
 		self.info.clear()

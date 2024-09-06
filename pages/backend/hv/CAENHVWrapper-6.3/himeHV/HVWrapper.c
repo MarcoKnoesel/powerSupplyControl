@@ -244,7 +244,7 @@ const char* freeListsAndThrowError(int ret, unsigned long type, float fParValLis
 
 
 
-const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned short chStop, char* ParName){
+const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned short chStop, char* ParName, int iType){
 
 	char reply[800] = "";
 
@@ -291,35 +291,54 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 		and you have to make sure to use fParValList in the former case
 		and lParValList in the latter.
 	*/
-	type = PARAM_TYPE_NUMERIC;
+	if(iType == 0){
+		type = PARAM_TYPE_NUMERIC;
+	}
+	else{
+		type = PARAM_TYPE_ONOFF;
+	}
 	
 	if( type == PARAM_TYPE_NUMERIC ){
 		fParValList = malloc(ChNum*sizeof(float));
 		ret = CAENHV_GetChParam(handle, Slot, ParName, ChNum, ChList, fParValList);
 	}
 	else{
-		lParValList = malloc(ChNum*sizeof(long));
-		ret = CAENHV_GetChParam(handle, Slot, ParName, ChNum, ChList, lParValList);
+	//	if( type == PARAM_TYPE_ONOFF ){
+	//		lParValList = malloc(ChNum*sizeof(uint));
+	//		ret = CAENHV_GetChParam(handle, Slot, ParName, ChNum, ChList, lParValList);
+	//	}
+	//	else{
+			lParValList = malloc(ChNum*sizeof(long));
+			ret = CAENHV_GetChParam(handle, Slot, ParName, ChNum, ChList, lParValList);
+	//	}
 	}
 
 	// check & debug
+	//printf("ChNum = %d\n", ChNum);
 	//printf("handle = %d\n", handle);
 	//printf("slot = %d\n", Slot);
 	//printf("ParName = %s\n", ParName);
-	//printf("chlist[0] = %d\n", ChList[0]);
+	//for(int i = 0; i < chStop - chStart; i++){
+	//	printf("chlist[i] = %d\n", ChList[i]);
+	//}
 	//printf("type = %ld\n", type);
-	//printf("param_type_num = %d\n",PARAM_TYPE_NUMERIC);
 
 	// Use the above lists to get channel parameters
 	if( ret != CAENHV_OK ){
 		if(ChList != NULL) free(ChList);
 		return freeListsAndThrowError(ret, type, fParValList, lParValList);
 	}
-	
+
+	//puts("*** CH PARAM ***");
+	//if( type != PARAM_TYPE_NUMERIC){
+	//	for( i = 0; i < chStop - chStart; i++ ){
+	//		printf("\nSlot: %2d  Ch: %3d  %s: %lx ", Slot, ChList[i], ParName, lParValList[i]); 
+	//	}
+	//}
+
 	for(int iCh = 0; iCh < chStop - chStart; iCh++){
 		char tmp[16] = "";
-		//if( type == PARAM_TYPE_NUMERIC ){
-		if( 1 ){
+		if( type == PARAM_TYPE_NUMERIC ){
 			sprintf(tmp, "%f", fParValList[iCh]);
 		}
 		else{
@@ -330,6 +349,10 @@ const char* HVGetChParam(unsigned short Slot, unsigned short chStart, unsigned s
 		}
 		strcat(reply, tmp);
 	}
+	//puts("*** CH PARAM ***");
+	//puts(reply);
+	//puts("*** CH PARAM END ***");
+
 
 	if(ChList != NULL) free(ChList);
 	freeLists(type, fParValList, lParValList);

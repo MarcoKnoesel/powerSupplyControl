@@ -1,4 +1,4 @@
-# HV Crate,HV slot,HV channel,FPGA,DAC chain,PaDiWa channel (0 - 15),Layer,Module number in this layer (0 - 23),Position (0 -> right/down or 1 -> left/up)
+# HV Crate (0 - ...),HV slot (0 - ...),HV channel (0 - ...),FPGA (0 - 3),DAC chain (0 - 2),PaDiWa channel (0 - 15),Layer (0 - ...),Module number in this layer (0 - 23),Position (0 -> right/down or 1 -> left/up)
 0,0,0,1,0,8,1,0,0
 0,0,1,1,0,9,1,1,0
 0,0,2,1,0,10,1,2,0

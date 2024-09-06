@@ -1,5 +1,6 @@
 import pandas as pd
 import pages.backend.hv.CSVHelper as csvh
+import pages.backend.hv.HVList as HVList
 
 readVoltagesFromCSV_errors = []
 readVoltagesFromCSV_warnings = []
@@ -14,7 +15,7 @@ def readVoltagesFromCSV():
 
 	voltages = []
 	try:
-		csvFile = open("pages/backend/hv/voltages/2024-05-24.csv", "r")
+		csvFile = open("pages/backend/hv/voltages/2024-06-25.csv", "r")
 	except:
 		readVoltagesFromCSV_errors.append("CSV file for voltages not found!")
 		return voltages
@@ -55,6 +56,21 @@ def readVoltagesFromCSV():
 def getVoltageDataframe():
 	# get voltages and currents from the HV supply
 	voltages = readVoltagesFromCSV()
+
+	seenChannels = []
+	for entry in voltages:
+		ch = entry[0]
+		if ch in seenChannels:
+			readVoltagesFromCSV_warnings.append("Channel " + str(ch) + " appears more than one time in the CSV file defining voltages!")
+			continue
+		if ch >= len(HVList.hvCratesSlotsChannels):
+			readVoltagesFromCSV_warnings.append("Channel " + str(ch) + " listed in the CSV file doesn't exist!")
+			continue
+		else:
+			if HVList.hvCratesSlotsChannels[ch] == [-1, -1, -1]:
+				readVoltagesFromCSV_warnings.append("Channel " + str(ch) + " listed in the CSV file doesn't exist!")
+				continue
+		seenChannels.append(ch)
 
 	# create and return dataframe
 	df = pd.DataFrame(voltages)
