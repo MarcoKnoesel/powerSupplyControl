@@ -2,6 +2,7 @@
 import sys
 import pages.backend.lv.LVDefinitions as LVDef
 import pages.backend.hv.HVDefinitions as HVDef
+import pages.backend.padiwa.PaDiWaDefinitions as PaDiWaDef
 import pages.backend.InfluxDB as InfluxDB
 import pages.backend.InfluxDBConfig as InfluxDBConfig
 import pages.backend.lv.LVList as LVList
@@ -24,6 +25,7 @@ def init():
 		# Initialize LV and HV supplies
 		LVDef.init()
 		HVDef.init()
+		PaDiWaDef.init()
 		# Create channel map
 		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-06-10.csv")
 		# Start threads for writing data to InfluxDB
