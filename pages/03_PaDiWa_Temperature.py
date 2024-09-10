@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 import pages.backend.InitPowerSupplies as Init
 import pages.backend.padiwa.PaDiWaList as PaDiWaList
-import subprocess
+import pages.backend.padiwa.TemperatureReadout as TemperatureReadout
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -14,20 +14,6 @@ st.set_page_config("PaDiWa Temperature", page_icon = "svg/icon.svg")
 # in order start a new TCP socket for the LV supply
 # and a C wrapper for the HV supply.
 Init.init()
-
-def temperatureStringToArray(reply: str):
-	entries = []
-	entryStart = 0
-	for i in range(0, len(reply)):
-		if reply[i] == "\t":
-			entry = reply[entryStart:i]
-			entryStart = i + 1
-			entries.append(entry)
-		else:
-			if i == len(reply) - 1:
-				entry = reply[entryStart:]
-				entries.append(entry)
-	return entries
 
 st.title("PaDiWa Temperature :thermometer:")
 
@@ -43,21 +29,9 @@ for addrAndChains in PaDiWaList.padiwaList:
 
 		chain = str(c)
 
-		# start the perl script that reads the PaDiWa temperature
-		p = subprocess.Popen(["perl", "/home/hime/trbsoft/daqtools/padiwa.pl", str(address), chain, "temp"], stdout = subprocess.PIPE)
+		temperature = TemperatureReadout.getTemperature(address, chain)
 
-		# the reply has the form 
-		#    [FPGA address]\t[DAC chain]\t[temperature in degree Celsius]\n
-		reply = p.stdout.read().decode()
-
-		# remove \n at the end of the reply
-		if reply[-1] == "\n":
-			reply = reply[:-1]
-
-		# store all tab-separated entries in an array
-		entries = temperatureStringToArray(reply)
-
-		cols[0].metric("Chain " + chain, entries[2] + " °C")
+		cols[0].metric("Chain " + chain, temperature + " °C")
 
 # -------- Last updated --------
 
