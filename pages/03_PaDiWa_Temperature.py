@@ -17,6 +17,9 @@ Init.init()
 
 st.title("PaDiWa Temperature :thermometer:")
 
+if len(PaDiWaList.padiwaList) == 0:
+	st.warning("No PaDiWa board found. You can define new PaDiWas in `pages/backend/padiwa/PaDiWaDefinitions.py`.", icon = "⚠️")
+
 for addrAndChains in PaDiWaList.padiwaList:
 
 	address = str(addrAndChains[0])
@@ -31,7 +34,7 @@ for addrAndChains in PaDiWaList.padiwaList:
 
 		temperature = TemperatureReadout.getTemperature(address, chain)
 
-		cols[0].metric("Chain " + chain, temperature + " °C")
+		cols[0].metric("DAC chain " + chain, temperature + " °C")
 
 # -------- Last updated --------
 
