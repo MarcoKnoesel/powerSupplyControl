@@ -27,13 +27,14 @@ def init():
 		HVDef.init()
 		PaDiWaDef.init()
 		# Create channel map
-		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-06-10.csv")
+		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-09-06_de.csv")
 		# Start threads for writing data to InfluxDB
 		if InfluxDBConfig.writeTime >= 0:
 			for i in range(0, len(LVList.lvSupplyList)):
 				InfluxDB.lvThreads.append(InfluxDB.InfluxDB(lv = LVList.lvSupplyList[i]))
 			for i in range(0, len(HVList.hvSupplyList)):
-				InfluxDB.hvThreads.append(InfluxDB.InfluxDB(hv = HVList.hvSupplyList[i]))
+				InfluxDB.hvThreads.append(InfluxDB.InfluxDB(hv = HVList.hvSupplyList[i], hvid = i))
+			InfluxDB.padiwaThreads.append(InfluxDB.InfluxDB())
 		# Remember that initialization is done now
 		sys.argv.append("POWER_SUPPLY_INIT")
 	# Display error messages if the connection to any of the 

@@ -119,29 +119,6 @@ else:
 
 	else:
 
-		slots_hv = [[0,2,4,6,8],[1,2,4,6,8]]
-		nch_hv = [[24,24,24,24,12],[12,24,24,24,24]]
-		nChOn = 0
-		for i in range(0,2):
-			
-			print("********")
-			print(HVList.hvSupplyList[i].name)
-			print("********")
-
-			for j in range(0, len(slots_hv[i])):
-				current_slot_hv = slots_hv[i][j]
-				result = HVList.hvSupplyList[i].measureVoltages(current_slot_hv, 0, nch_hv[i][j])
-				for entry in result:
-					if entry > 2:
-						nChOn += 1
-				print(result)
-
-		print("number of channels on")
-		print(nChOn)
-		print("")
-
-
-
 		# -------- Logout button --------
 		def logOut() -> None:
 			for hv in HVList.hvSupplyList:

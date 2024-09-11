@@ -18,7 +18,7 @@ def temperatureStringToArray(reply: str):
 
 
 
-def getTemperature(address: str, chain: str) -> str:
+def getTemperatureString(address: str, chain: str) -> str:
 
 	# start the perl script that reads the PaDiWa temperature
 	p = subprocess.Popen(["perl", "/home/hime/trbsoft/daqtools/padiwa.pl", address, chain, "temp"], stdout = subprocess.PIPE)
@@ -36,3 +36,6 @@ def getTemperature(address: str, chain: str) -> str:
 
 	# return temperature
 	return entries[2]
+
+def getTemperature(address: str, chain: str) -> float:
+	return float(getTemperatureString(address, chain))

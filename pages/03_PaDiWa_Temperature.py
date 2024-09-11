@@ -3,6 +3,7 @@ from datetime import datetime
 import pages.backend.InitPowerSupplies as Init
 import pages.backend.padiwa.PaDiWaList as PaDiWaList
 import pages.backend.padiwa.TemperatureReadout as TemperatureReadout
+import pages.backend.InfluxDB as InfluxDB
 
 # -------- Title of the page (displayed as tab name in the browser) --------
 
@@ -14,6 +15,13 @@ st.set_page_config("PaDiWa Temperature", page_icon = "svg/icon.svg")
 # in order start a new TCP socket for the LV supply
 # and a C wrapper for the HV supply.
 Init.init()
+
+
+# -------- Pause threads writing to InfluxDB --------
+
+InfluxDB.pausePaDiWaThread()
+
+# -------- Beginning of the PaDiWa-temperature page --------
 
 st.title("PaDiWa Temperature :thermometer:")
 
@@ -32,7 +40,7 @@ for addrAndChains in PaDiWaList.padiwaList:
 
 		chain = str(c)
 
-		temperature = TemperatureReadout.getTemperature(address, chain)
+		temperature = TemperatureReadout.getTemperatureString(address, chain)
 
 		cols[0].metric("DAC chain " + chain, temperature + " °C")
 
@@ -41,3 +49,7 @@ for addrAndChains in PaDiWaList.padiwaList:
 st.divider()
 
 st.markdown("**Last updated:** " + datetime.now().strftime("%H:%M:%S"))
+
+# -------- Continue threads writing to InfluxDB --------
+
+InfluxDB.runAllThreads()

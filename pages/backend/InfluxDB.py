@@ -3,6 +3,9 @@ import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 import pages.backend.lv.LVSupply as LVSupply
 import pages.backend.hv.HVSupply as HVSupply
+import pages.backend.hv.HVList as HVList
+import pages.backend.padiwa.PaDiWaList as PaDiWaList
+import pages.backend.padiwa.TemperatureReadout as TemperatureReadout
 import pages.backend.InfluxDBConfig as InfluxDBConfig
 from datetime import datetime
 import time
@@ -10,6 +13,7 @@ import os
 
 lvThreads = []
 hvThreads = []
+padiwaThreads = []
 
 def pauseLVThread(i: int) -> None:
 	if InfluxDBConfig.writeTime >= 0:
@@ -19,21 +23,28 @@ def pauseHVThread(i: int) -> None:
 	if InfluxDBConfig.writeTime >= 0:
 		hvThreads[i].pause()
 
+def pausePaDiWaThread() -> None:
+	if InfluxDBConfig.writeTime >= 0:
+		padiwaThreads[0].pause()
+
 def runAllThreads() -> None:
 	if InfluxDBConfig.writeTime >= 0:
 		for i in range(0, len(lvThreads)):
 			lvThreads[i].run()
 		for i in range(0, len(hvThreads)):
 			hvThreads[i].run()
+		for i in range(0, len(padiwaThreads)):
+			padiwaThreads[i].run()
 
 # By creating instances of this class, separate threads are started that allow to periodically write data to InfluxDB.
 # In the main thread, streamlit keeps running the web page.
 class InfluxDB:
-	def __init__(self, lv: LVSupply = None, hv: HVSupply = None) -> None:
+	def __init__(self, lv: LVSupply = None, hv: HVSupply = None, hvid: int = -1) -> None:
 		self.pauseThread = False    # Setting this variable to True tells the subthread to stop as soon as possible. It is set by the main thread.
 		self.influxDone = False     # This variable will be set to True after the subthread has stopped. This information is needed by the main thread.
 		self.lv = lv
 		self.hv = hv
+		self.hvid = hvid
 		self.writeTime = InfluxDBConfig.writeTime
 		if self.writeTime >= 0 and self.writeTime < 5:
 			self.writeTime = 5
@@ -110,7 +121,7 @@ class InfluxDB:
 				# iterate over all channels of the current slot
 				for iCh in range(0, len(voltages)):
 					# get the HIME channel number (ranges over all channels of HIME, not only the current slot)
-					chStr = self.to4digit(self.hv.slotAndCh_to_himeCh(slot, iCh))
+					chStr = self.to4digit(HVList.channelMap.crateSlotCh_to_himeCh(self.hvid, slot, iCh))
 					# submit to InfluxDB
 					point_voltage = influxdb_client.Point("hv").tag("name_channel", self.hv.name + "_" + chStr).field("voltage", voltages[iCh])
 					point_current = influxdb_client.Point("hv").tag("name_channel", self.hv.name + "_" + chStr).field("current", currents[iCh])
@@ -118,6 +129,23 @@ class InfluxDB:
 					self.write_api.write(self.bucket, self.org, point_current)
 			# reset time
 			self.startTime = time.time()
+
+
+	# Submit the PaDiWa temperature
+	# Invoked in iterations of influxLoop()
+	def padiwaToInflux(self) -> None:
+		# loop over all FPGAs, where PaDiWa boards are connected to
+		for addrAndChains in PaDiWaList.padiwaList:
+			# address of the current FPGA
+			address = str(addrAndChains[0])
+			# loop over all PaDiWa boards of the same FPGA
+			for c in addrAndChains[1]:
+				# DAC chain of the current PaDiWa
+				chain = str(c)
+				# get temperature value
+				temperature = float(TemperatureReadout.getTemperature(address, chain))
+				point_temperature = influxdb_client.Point("padiwa").tag("FPGA_DACchain", address + "_" + chain).field("temperature", temperature)
+				self.write_api.write(self.bucket, self.org, point_temperature)
 
 
 	# This is invoked in the subthread
@@ -128,10 +156,13 @@ class InfluxDB:
 			else:
 				self.influxDone = False
 				# Check if self.writeTime has passed since the last time something was written to InfluxDB
-				if (time.time() - self.startTime) >= self.writeTime and self.lv != None:
-					self.lvToInflux()
-				if (time.time() - self.startTime) >= self.writeTime and self.hv != None:
-					self.hvToInflux()
+				if (time.time() - self.startTime) >= self.writeTime:
+					if self.lv != None:
+						self.lvToInflux()
+					if self.hv != None:
+						self.hvToInflux()
+					self.padiwaToInflux()
+
 			# Wait, but allow interruption
 			time.sleep(0.1)
 

@@ -12,9 +12,9 @@ def show(login_col):
 	# show login status of all HV supplies
 	for hv in HVList.hvSupplyList:
 		if hv.loggedIn:
-			login_col.markdown("Logged in to " + hv.name + " 🟢")
+			login_col.markdown("🟢  Logged in to " + hv.name)
 		else:
-			login_col.markdown("Not logged in to " + hv.name + " 🔴")
+			login_col.markdown("🔴  Not logged in to " + hv.name)
 		
 	# loop over all HV supplies and stop at the first one,
 	# where you're not logged in yet
