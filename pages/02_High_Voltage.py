@@ -130,7 +130,7 @@ else:
 		top_col_1.button("Log out from all HV supplies", on_click = logOut)
 		top_col_1.markdown("You are logged in to:")
 		for hv in HVList.hvSupplyList:
-			top_col_1.markdown(hv.name + " 🟢")
+			top_col_1.markdown("🟢  " + hv.name)
 
 		st.button("Switch all channels off", on_click=FullDetector.switchAllChannelsOff)
 		
