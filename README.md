@@ -13,8 +13,10 @@ Power-Supply Control serves to remotely control low-voltage (LV) and high-voltag
 		- [Install Python Packages](#install-python-packages)
 		- [Install InfluxDB Open Source](#install-influxdb-open-source)
 	- [Setup](#setup)
+		- [General Remarks](#general-remarks)
 		- [InfluxDB](#influxdb)
 		- [Adding or Removing LV and HV Supplies](#adding-or-removing-lv-and-hv-supplies)
+		- [Adding or Removing PaDiWa Boards](#adding-or-removing-padiwa-boards)
 	- [Start and Stop the Program](#start-and-stop-the-program)
 	- [Access the Web Page from Outside of Your Workplace](#access-the-web-page-from-outside-of-your-workplace)
 	- [Details](#details)
@@ -94,6 +96,11 @@ If you don't want to use InfluxDB, you can skip this step. However, you need to 
 
 
 
+### General Remarks
+Note that after changing any of the `.py` files or after changing the channel mapping, you need to restart Power-Supply Control completely. Simply refreshing the webpage will not work. The reason for that is that there is only **one** connection to each power supply, not a seperate connection for each session (i.e. for each web-browser window). The connections are set up only once (when the streamlit server is started), so if you make a change and only refresh the window, the connection will **not** be re-established.
+
+
+
 ### InfluxDB
 In order to give Power-Supply Control access to your InfluxDB, you need to define an environment variable in your shell that contains the InfluxDB token.
 Open a `tmux` session (or `screen` or similar) and type
@@ -119,7 +126,18 @@ and
 
 Inside these files, you can choose an arbitrary name for your devices. (In particular, the names don't need to be identical with the host names of the devices.) Note that your choice defines the name tag of the data submitted to InfluxDB. For the data from the HV supply, an underscore followed by the channel number will be appended to the name tag.
 
-The order of the power supplies in the dropdown menues of the LV and HV webpages will be the same as in `LVDefinitions.py` and `HVDefinitions.py`, respectively.
+The order of the power supplies in the dropdown menues of the LV and HV webpages will be the same as in `LVDefinitions.py` and `HVDefinitions.py`, respectively. The order of the defined HV supplies is required to match the crate number defined in the channel mapping in the directory
+
+	pages/backend/hv/channelMapping
+
+
+
+### Adding or Removing PaDiWa Boards
+Analogous to the power supplies, PaDiWa boards can be defined in 
+
+	pages/backend/padiwa/PaDiWaDefinitions.py
+
+The boards are identified uniquely via the FPGA number of the TRB3 board they are connected to and the corresponding DAC chain.
 
 
 
