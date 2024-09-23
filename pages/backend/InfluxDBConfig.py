@@ -11,4 +11,4 @@ bucket = "HIME"
 # given in seconds.
 # Enter a negative number to disable data submission completely.
 # Non-negative numbers smaller than 5 will be set to 5 automatically.
-writeTime = 61
+writeTime = 60
