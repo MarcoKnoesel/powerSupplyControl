@@ -9,9 +9,6 @@ def changeChannelVoltage(himeCh: int, voltage: float) -> None:
 		crate = crateSlotAndChannel[0]
 		slot = crateSlotAndChannel[1]
 		channel = crateSlotAndChannel[2]
-		print(crate)
-		print(slot)
-		print(channel)
 		HVList.hvSupplyList[crate].setVoltage_channel(slot, channel, voltage)
 
 def pwOn_channel(himeCh: int) -> None:

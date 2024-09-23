@@ -47,6 +47,7 @@ class ChannelMap:
 			return
 		
 		csvList = csvFile.readlines()
+		csvFile.close()
 
 		for line in csvList:
 			if csvh.isComment(line):

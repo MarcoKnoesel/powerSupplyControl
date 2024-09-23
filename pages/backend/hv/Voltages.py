@@ -21,6 +21,7 @@ def readVoltagesFromCSV():
 		return voltages
 	
 	csvList = csvFile.readlines()
+	csvFile.close()
 
 	for line in csvList:
 		if csvh.isComment(line):

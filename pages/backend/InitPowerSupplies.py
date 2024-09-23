@@ -1,5 +1,6 @@
 # -------- Initialize LVs --------
 import sys
+import time
 import pages.backend.lv.LVDefinitions as LVDef
 import pages.backend.hv.HVDefinitions as HVDef
 import pages.backend.padiwa.PaDiWaDefinitions as PaDiWaDef
@@ -16,28 +17,28 @@ import pages.backend.hv.ChannelMap as ChannelMap
 # We only want to start a TCP socket and to start the C wrapper 
 # when the streamlit server is started!
 def init():
-	# Check if initialization was already done
-	pow_sup_init = False
-	for i in range(0, len(sys.argv)):
-		if sys.argv[i] == "POWER_SUPPLY_INIT":
-			pow_sup_init = True
-	if not pow_sup_init:
-		# Initialize LV and HV supplies
-		LVDef.init()
-		HVDef.init()
-		PaDiWaDef.init()
-		# Create channel map
-		HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-09-06_de.csv")
-		# Start threads for writing data to InfluxDB
-		if InfluxDBConfig.writeTime >= 0:
-			for i in range(0, len(LVList.lvSupplyList)):
-				InfluxDB.lvThreads.append(InfluxDB.InfluxDB(lv = LVList.lvSupplyList[i]))
-			for i in range(0, len(HVList.hvSupplyList)):
-				InfluxDB.hvThreads.append(InfluxDB.InfluxDB(hv = HVList.hvSupplyList[i], hvid = i))
-			InfluxDB.padiwaThreads.append(InfluxDB.InfluxDB())
-		# Remember that initialization is done now
-		sys.argv.append("POWER_SUPPLY_INIT")
 	# Display error messages if the connection to any of the 
 	# LV power supplies could not be set up.
 	LVList.showErrors()
 	HVList.showErrors()
+	# Check if initialization was already done
+	for i in range(0, len(sys.argv)):
+		if sys.argv[i] == "POWER_SUPPLY_INIT":
+			return
+	print("\ninitialize\n")
+	# Remember that initialization is done now
+	sys.argv.append("POWER_SUPPLY_INIT")
+	time.sleep(4)
+	# Initialize LV and HV supplies
+	LVDef.init()
+	HVDef.init()
+	PaDiWaDef.init()
+	# Create channel map
+	HVList.channelMap = ChannelMap.ChannelMap("pages/backend/hv/channelMapping/2024-09-06_de.csv")
+	# Start threads for writing data to InfluxDB
+	if InfluxDBConfig.writeTime >= 0:
+		for i in range(0, len(LVList.lvSupplyList)):
+			InfluxDB.lvThreads.append(InfluxDB.InfluxDB(lv = LVList.lvSupplyList[i]))
+		for i in range(0, len(HVList.hvSupplyList)):
+			InfluxDB.hvThreads.append(InfluxDB.InfluxDB(hv = HVList.hvSupplyList[i], hvid = i))
+		InfluxDB.padiwaThreads.append(InfluxDB.InfluxDB())

@@ -8,7 +8,10 @@ class HVSupply:
 		self.name = name
 		self.user = user
 		self.ip = ip
+		self.user_str_buf = ctypes.create_string_buffer(self.user.encode("utf-8"))
+		self.ip_str_buf = ctypes.create_string_buffer(self.ip.encode("utf-8"))
 		self.pw = None
+		self.pw_str_buf = None
 		self.cw = CWrapper.CWrapper(ip)
 		self.messages = Messages.Messages()
 		self.N_SLOTS = 9
@@ -19,12 +22,15 @@ class HVSupply:
 	# -------- Login / Logout / Timeout --------
 		
 	def login(self, password: str) -> bool:
-		self.pw = ctypes.create_string_buffer(password.encode("utf-8"))
+		
+		if not self.pw == password:
+			self.pw = password
+			self.pw_str_buf = ctypes.create_string_buffer(self.pw.encode("utf-8"))
+
 		reply = self.cw.login(
-			self.cw.libHVWrapper.HVSystemLogin, 
-			ctypes.create_string_buffer(self.user.encode("utf-8")),
-			self.pw,
-			ctypes.create_string_buffer(self.ip.encode("utf-8"))
+			self.user_str_buf,
+			self.pw_str_buf,
+			self.ip_str_buf
 		)
 		if reply == "!!4103":
 			self.isError("login", "!!Wrong password.")
@@ -39,12 +45,12 @@ class HVSupply:
 	def reconnect(self) -> bool:
 		# Before logging in again, HVSystemLogout() and forceInitCWrapper() need to be invoked.
 		# Otherwise, the new login will not work.
-		self.cw.receiveString(self.cw.libHVWrapper.HVSystemLogout)
+		logoutReply = self.cw.logout()
 		self.cw.forceInitSystem()
-		reply = self.cw.login(self.cw.libHVWrapper.HVSystemLogin,
-			ctypes.create_string_buffer(self.user.encode("utf-8")), 
-			self.pw,
-			ctypes.create_string_buffer(self.ip.encode("utf-8"))
+		reply = self.cw.login(
+			self.user_str_buf, 
+			self.pw_str_buf,
+			self.ip_str_buf
 		)
 		if self.isError("reconnect", reply):
 			return False
@@ -54,11 +60,12 @@ class HVSupply:
 		if self.checkConnection() == 1:
 			self.reconnect()
 		self.pw = None
-		reply = self.cw.receiveString(self.cw.libHVWrapper.HVSystemLogout)
+		self.pw_str_buf = None
+		reply = self.cw.logout()
 		self.isError("logout", reply)
 	
 	def checkConnection(self) -> int:
-		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
+		reply = self.cw.getCrateMap()
 		# no connection; most probably due to timeout
 		if reply == "!!5" or reply == "!!4098":
 			return 1
@@ -99,7 +106,7 @@ class HVSupply:
 	def getMap(self) -> str:
 		if self.checkConnection() != 2:
 			self.reconnect()
-		reply = self.cw.receiveString(self.cw.libHVWrapper.HVGetCrateMap, removeLF = False)
+		reply = self.cw.getCrateMap()
 		if self.isError("getMap", reply):
 			return ""
 		return reply
@@ -154,11 +161,7 @@ class HVSupply:
 		return self.cw.setChParam_single("Pw", slot, channel, 0, 0, 1)
 	
 	def getStatus_slotAndChannels(self, slot: int, chStart: int, chStop: int):
-		reply = self.cw.getChParamStr("Pw", slot, chStart, chStop, 1) 
-		#print("reply is")
-		#print(reply)
-		#print("len(reply) is")
-		#print(len(reply))
+		reply = self.cw.getChParam("Pw", slot, chStart, chStop, 1) 
 		if self.isError("getStatus_slotAndChannels", str(reply[0])):
 			return [None,]
 		return reply

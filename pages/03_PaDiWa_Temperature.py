@@ -25,8 +25,14 @@ InfluxDB.pausePaDiWaThread()
 
 st.title("PaDiWa Temperature :thermometer:")
 
+top_cols = st.columns((6,2))
+
 if len(PaDiWaList.padiwaList) == 0:
-	st.warning("No PaDiWa board found. You can define new PaDiWas in `pages/backend/padiwa/PaDiWaDefinitions.py`.", icon = "⚠️")
+	top_cols[0].warning("No PaDiWa board found. You can define new PaDiWas in `pages/backend/padiwa/PaDiWaDefinitions.py`.", icon = "⚠️")
+else:
+	top_cols[0].markdown("Check if your PaDiWas are hot! :fire:")
+
+top_cols[1].image("svg/himeLogo.svg")
 
 for addrAndChains in PaDiWaList.padiwaList:
 
@@ -36,13 +42,13 @@ for addrAndChains in PaDiWaList.padiwaList:
 
 	cols = st.columns(4)
 
-	for c in addrAndChains[1]:
+	for iChain in range(0, len(addrAndChains[1])):
 
-		chain = str(c)
+		chain = str(addrAndChains[1][iChain])
 
 		temperature = TemperatureReadout.getTemperatureString(address, chain)
 
-		cols[0].metric("DAC chain " + chain, temperature + " °C")
+		cols[iChain].metric("DAC chain " + chain, temperature + " °C")
 
 # -------- Last updated --------
 

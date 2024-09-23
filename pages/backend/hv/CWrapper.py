@@ -7,11 +7,51 @@ class CWrapper:
 
 		self.libHVWrapper.initSystem.argtypes = [ct.c_int]
 		self.libHVWrapper.initSystem.restype = ct.c_void_p 
-		#print("[Py] Try to initialize system.")
 		self.libHVWrapper.initSystem(0)
+
+		# ---- Concerning the c_void return type ----
+		# c_char_p would lead to automatic conversion to python byte_string,
+		# which we don't want, so we can still apply free() on the pointer.
+		# Therefore, choose restype = c_void when a char[] is returned by 
+		# the HV wrapper
+
+		# set up loginFunction
+		self.loginFunction = self.libHVWrapper.HVSystemLogin
+		self.loginFunction.argtypes = [ct.c_char_p, ct.c_char_p, ct.c_char_p]
+		self.loginFunction.restype = ct.c_void_p 
+
+		# set up freeMeFunction
+		self.freeMeFunction = self.libHVWrapper.freeMe
+		self.freeMeFunction.argtypes = [ct.c_void_p]
+		self.freeMeFunction.restype = None
+
+		# set up logoutFunction
+		self.logoutFunction = self.libHVWrapper.HVSystemLogout
+		self.logoutFunction.argtypes = []
+
+		self.logoutFunction.restype = ct.c_void_p 
+
+		# set up getCrateMapFunction
+		self.getCrateMapFunction = self.libHVWrapper.HVGetCrateMap
+		self.getCrateMapFunction.argtypes = []
+		self.getCrateMapFunction.restype = ct.c_void_p
+
+		# set up getChParamFunction
+		self.getChParamFunction = self.libHVWrapper.HVGetChParam
+		self.getChParamFunction.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p, ct.c_ushort]
+		self.getChParamFunction.restype = ct.c_void_p 
+
+		# set up setChParamFunction
+		self.setChParamFunction = self.libHVWrapper.HVSetChParam
+		self.setChParamFunction.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p, ct.c_float, ct.c_int, ct.c_ulong]
+		self.setChParamFunction.restype = ct.c_void_p 
+
+
 
 	def forceInitSystem(self) -> None:
 		self.libHVWrapper.initSystem(1)
+
+
 
 	# convert a single line of comma-separated values to an array of float or string values
 	def csvLineToArr(self, csvstr: str, asStr: bool = False):
@@ -44,26 +84,19 @@ class CWrapper:
 
 		return data
 
+
+
 	# The parameter type tells the HV wrapper which type of return value it should expect from the HV.
 	# See HVWrapper.c.
 	def getChParamBase(self, parameterName: str, slot: int, channelStart: int, channelStop: int  = -1, type: int = 0) -> str:
 		if channelStop == -1:
 			channelStop = channelStart + 1
-		function = self.libHVWrapper.HVGetChParam
-		function.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p, ct.c_ushort]
-		# c_char_p would lead to automatic conversion to python byte_string,
-		# which we don't want, so we can still apply free() on the pointer.
-		# Therefore, restype = c_void:
-		function.restype = ct.c_void_p 
-		ptr = function(slot, channelStart, channelStop, parameterName.encode("utf-8"), type)
+		ptr = self.getChParamFunction(slot, channelStart, channelStop, parameterName.encode("utf-8"), type)
 		bytes = ct.cast(ptr, ct.c_char_p).value
-		self.free(ptr)
+		self.freeMeFunction(ptr)
 		reply = bytes.decode("utf-8")
 		return reply
 
-	def getChParamStr(self, parameterName: str, slot: int, channelStart: int, channelStop: int  = -1, type: int = 0):
-		reply = self.getChParamBase(parameterName, slot, channelStart, channelStop, type)
-		return self.csvLineToArr(reply, True)
 
 
 	# get an array of voltages or currents for a range of channels
@@ -71,61 +104,51 @@ class CWrapper:
 		reply = self.getChParamBase(parameterName, slot, channelStart, channelStop)
 		return self.csvLineToArr(reply)
 	
+
+
 	# set voltage or current for an individual channel
 	def setChParam_single(self, parameterName: str, slot: int, channel: int, value_float: float, value_int: int, useInt: bool) -> str:
 		return self.setChParam_multiple(parameterName, slot, channel, channel+1, value_float, value_int, useInt)
 
+
+
+	# set voltage or current for multiple channels of the same slot
 	def setChParam_multiple(self, parameterName: str, slot: int, chStart: int, chStop: int, value_float: float, value_int: int, useInt: bool) -> str:
 		if chStop == -1:
 			chStop = chStart + 1
-		function = self.libHVWrapper.HVSetChParam
-		function.argtypes = [ct.c_ushort, ct.c_ushort, ct.c_ushort, ct.c_char_p, ct.c_float, ct.c_int, ct.c_ulong]
-		# c_char_p would lead to automatic conversion to python byte_string,
-		# which we don't want, so we can still apply free() on the pointer.
-		# Therefore, restype = c_void:
-		function.restype = ct.c_void_p 
-		ptr = function(slot, chStart, chStop, parameterName.encode("utf-8"), value_float, value_int, useInt)
+		ptr = self.setChParamFunction (slot, chStart, chStop, parameterName.encode("utf-8"), value_float, value_int, useInt)
 		bytes = ct.cast(ptr, ct.c_char_p).value
-		self.free(ptr)
+		self.freeMeFunction(ptr)
 		return bytes.decode("utf-8")
 	
-	# send a command and get the reply of the HV supply
-	def receiveString(self, function, parameterStr: str = None, removeLF: bool = True) -> str:
-		if parameterStr != None:
-			function.argtypes = [ct.c_char_p]
-		else:
-			function.argtypes=[]
-		# c_char_p would lead to automatic conversion to python byte_string,
-		# which we don't want, so we can still apply free() on the pointer.
-		# Therefore, restype = c_void:
-		function.restype = ct.c_void_p 
-		if parameterStr == None:
-			ptr = function()
-		else:
-			ptr = function(parameterStr)
+
+
+	# HV supply login
+	def login(self, user, pw, ip) -> str:
+		ptr = self.loginFunction(user, pw, ip)
 		bytes = ct.cast(ptr, ct.c_char_p).value
-		self.free(ptr)
+		self.freeMeFunction(ptr)
 		reply = bytes.decode("utf-8")
-		if removeLF:
-			reply = reply.replace("\n", "")
+		reply = reply.replace("\n", "")
 		return reply
 	
-		# send a command and get the reply of the HV supply
-	def login(self, function, user, pw, ip) -> str:
-		function.argtypes = [ct.c_char_p, ct.c_char_p, ct.c_char_p]
-		# c_char_p would lead to automatic conversion to python byte_string,
-		# which we don't want, so we can still apply free() on the pointer.
-		# Therefore, restype = c_void:
-		function.restype = ct.c_void_p 
-		ptr = function(user, pw, ip)
+
+
+	# HV supply logout
+	def logout(self) -> str:
+		ptr = self.logoutFunction()
 		bytes = ct.cast(ptr, ct.c_char_p).value
-		self.free(ptr)
+		self.freeMeFunction(ptr)
 		reply = bytes.decode("utf-8")
 		reply = reply.replace("\n", "")
 		return reply
 
-	# free memory of the C wrapper
-	def free(self, ptr) -> None:
-		self.libHVWrapper.freeMe.argtypes = [ct.c_void_p]
-		self.libHVWrapper.freeMe.restype = None
-		self.libHVWrapper.freeMe(ptr)
+
+
+	# get a list of all HV modules and their number of channels
+	def getCrateMap(self) -> str:
+		ptr = self.getCrateMapFunction()
+		bytes = ct.cast(ptr, ct.c_char_p).value
+		self.freeMeFunction(ptr)
+		reply = bytes.decode("utf-8")
+		return reply

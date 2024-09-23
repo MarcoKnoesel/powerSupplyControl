@@ -36,6 +36,8 @@ def runAllThreads() -> None:
 		for i in range(0, len(padiwaThreads)):
 			padiwaThreads[i].run()
 
+
+
 # By creating instances of this class, separate threads are started that allow to periodically write data to InfluxDB.
 # In the main thread, streamlit keeps running the web page.
 class InfluxDB:
@@ -48,7 +50,8 @@ class InfluxDB:
 		self.writeTime = InfluxDBConfig.writeTime
 		if self.writeTime >= 0 and self.writeTime < 5:
 			self.writeTime = 5
-		self.startTime = time.time() - self.writeTime    # Initialize startTime to a value causing the first set of data to be submitted right now to InfluxDB
+		self.startTime = time.time()
+		self.startTime_hvCheck = time.time()
 		# -- start InfluxDB client --
 		self.bucket = InfluxDBConfig.bucket
 		self.org = InfluxDBConfig.org
@@ -59,6 +62,9 @@ class InfluxDB:
 		# -- create and start subthread --
 		self.thread = threading.Thread(target = self.influxLoop)
 		self.thread.start()
+		self.reconnectCounter = 0
+
+
 
 	# This can be invoked in the main thread
 	# in order to stop the submission of data to InfluxDB
@@ -67,10 +73,14 @@ class InfluxDB:
 		while not self.influxDone:
 			time.sleep(0.1)
 
+
+
 	# This can be invoked in the main thread
 	# in order to restart the submission of data to InfluxDB
 	def run(self) -> None:
 		self.pauseThread = False
+
+
 
 	# Submit data from the TDK Lambda low-voltage supply
 	# Invoked in iterations of influxLoop()
@@ -87,12 +97,12 @@ class InfluxDB:
 			# If so, wait a short time until the connection is re-established.
 			voltage = self.lv.measureVoltage()
 			current = self.lv.measureCurrent()
-			print("------------------------------------------")
-			print("[InfluxDB.py] Submitting data to InfluxDB:")
-			print("[InfluxDB.py] Time: " + datetime.now().strftime("%H:%M:%S"))
-			print("[InfluxDB.py] Voltage: " + str(voltage) + " V")
-			print("[InfluxDB.py] Current: " + str(current) + " A")
-			print("------------------------------------------")
+			#print("------------------------------------------")
+			#print("[InfluxDB.py] Submitting data to InfluxDB:")
+			#print("[InfluxDB.py] Time: " + datetime.now().strftime("%H:%M:%S"))
+			#print("[InfluxDB.py] Voltage: " + str(voltage) + " V")
+			#print("[InfluxDB.py] Current: " + str(current) + " A")
+			#print("------------------------------------------")
 			point_voltage = influxdb_client.Point("lv").tag("name", self.lv.name).field("voltage", voltage)
 			point_current = influxdb_client.Point("lv").tag("name", self.lv.name).field("current", current)
 			self.write_api.write(self.bucket, self.org, point_voltage)
@@ -102,18 +112,32 @@ class InfluxDB:
 			# Wait a short time until the connection is re-established.
 			time.sleep(0.1)
 
+
+
 	# Submit data from the CAEN high-voltage supply
 	# Invoked in iterations of influxLoop()
 	def hvToInflux(self) -> None:
-		# no connection
-		if self.hv.checkConnection() == 0:
+		# ---- no connection ----
+		connectionResult = self.hv.checkConnection()
+		if connectionResult == 0:
 			return
-		# timeout -> reconnect
-		if self.hv.checkConnection() == 1:
-			self.hv.reconnect()
+		# ---- timeout -> reconnect ----
+		reconnectCounter = 0
+		while connectionResult == 1:
+			if reconnectCounter > 10:
+				return
+			# wait a short time
 			time.sleep(0.1)
-		# connected
-		if self.hv.checkConnection() == 2:
+			# attempt reconnect
+			self.hv.reconnect()
+			# update connectionResult
+			connectionResult = self.hv.checkConnection()
+			# count this attempt
+			reconnectCounter += 1
+
+		# ---- connected ----
+		if connectionResult == 2:
+			self.counter = 0
 			# measure voltages of all channels in all slots of the HV supply
 			for slot in list(range(0,9)) + [10, 12, 14]:
 				voltages = self.hv.measureVoltages(slot, 0, 48)
@@ -121,14 +145,16 @@ class InfluxDB:
 				# iterate over all channels of the current slot
 				for iCh in range(0, len(voltages)):
 					# get the HIME channel number (ranges over all channels of HIME, not only the current slot)
-					chStr = self.to4digit(HVList.channelMap.crateSlotCh_to_himeCh(self.hvid, slot, iCh))
+					himeCh = HVList.channelMap.crateSlotCh_to_himeCh(self.hvid, slot, iCh)
+					chStr = self.to4digit(himeCh)
+					if himeCh == -1: 
+						continue
 					# submit to InfluxDB
 					point_voltage = influxdb_client.Point("hv").tag("name_channel", self.hv.name + "_" + chStr).field("voltage", voltages[iCh])
 					point_current = influxdb_client.Point("hv").tag("name_channel", self.hv.name + "_" + chStr).field("current", currents[iCh])
 					self.write_api.write(self.bucket, self.org, point_voltage)
 					self.write_api.write(self.bucket, self.org, point_current)
-			# reset time
-			self.startTime = time.time()
+
 
 
 	# Submit the PaDiWa temperature
@@ -162,9 +188,16 @@ class InfluxDB:
 					if self.hv != None:
 						self.hvToInflux()
 					self.padiwaToInflux()
-
+					self.startTime = time.time()
+				# Avoid the loss of connection due to timeout 
+				if (time.time() - self.startTime_hvCheck) >= 30.:
+					if self.hv != None:
+						self.hv.checkConnection()
+						self.startTime_hvCheck = time.time()
 			# Wait, but allow interruption
 			time.sleep(0.1)
+
+
 
 	def to4digit(self, i: int) -> str:
 		iStr = str(i)

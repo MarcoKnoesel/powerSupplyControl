@@ -1,4 +1,5 @@
 import subprocess
+import pages.backend.padiwa.PaDiWaList as PaDiWaList
 
 
 
@@ -20,13 +21,24 @@ def temperatureStringToArray(reply: str):
 
 def getTemperatureString(address: str, chain: str) -> str:
 
+	reply = ""
+
 	# start the perl script that reads the PaDiWa temperature
-	p = subprocess.Popen(["perl", "/home/hime/trbsoft/daqtools/padiwa.pl", address, chain, "temp"], stdout = subprocess.PIPE)
+	with subprocess.Popen(["perl", "/home/hime/trbsoft/daqtools/padiwa.pl", address, chain, "temp"], stdout = subprocess.PIPE) as p:
+		
+		# the reply has the form 
+		#    [FPGA address]\t[DAC chain]\t[temperature in degree Celsius]\n
+		reply = p.stdout.read().decode()
 
-	# the reply has the form 
-	#    [FPGA address]\t[DAC chain]\t[temperature in degree Celsius]\n
-	reply = p.stdout.read().decode()
+		# request the return code, so that p can be garbage collected
+		p.wait()
 
+		# kill the subprocess
+		p.kill()
+
+	if len(reply) == 0:
+		return "0"
+	
 	# remove \n at the end of the reply
 	if reply[-1] == "\n":
 		reply = reply[:-1]
